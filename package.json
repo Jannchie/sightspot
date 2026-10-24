@@ -1,0 +1,28 @@
+{
+  "packageManager": "pnpm@10.11.1",
+  "name": "photo-spots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "postinstall": "void prepare",
+    "data:export": "python -I -X utf8 scripts/export_demo.py"
+  },
+  "dependencies": {
+    "@jannchie/icons": "0.12.0",
+    "@jannchie/icons-vue": "0.12.0",
+    "maplibre-gl": "^5.9.0",
+    "pmtiles": "^4.5.0",
+    "vue": "^3.5.30"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "@void/vue": "1.2.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.0.10",
+    "void": "1.2.1",
+    "wrangler": "4.152.0"
+  }
+}

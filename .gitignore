@@ -1,0 +1,16 @@
+node_modules
+dist
+.void
+.wrangler
+.void-wrangler.jsonc
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+
+__pycache__/
+*.pyc
+
+# 由 scripts/export_demo.py 生成（约 120 MB、2000 个文件，每次导出都会整体变化），不进仓库
+/public/data/
