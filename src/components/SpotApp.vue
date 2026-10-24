@@ -1,17 +1,16 @@
 <script setup lang="ts">
-// 页面骨架：全屏地图 + meisho 的 MapSheet（桌面端左侧面板 / 手机端底部抽屉），面板挡住的部分作为地图留白
+// 页面：骨架（地图、侧栏 / 抽屉、留白、键盘操作）是 mapette 的 MapExplorer，这里只有机位自己的图层和面板内容
 import { JIcon } from "@jannchie/icons-vue";
-import "meisho/meisho.css";
-import { MapSheet, type SheetSnap } from "meisho/vue";
-import type { PaddingOptions } from "maplibre-gl";
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import { type SheetSnap } from "@mapette/core";
+import { MapExplorer } from "@mapette/vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { ICONS } from "../icons";
-import { directions, fieldOfView } from "meisho/style";
+import { directions, fieldOfView } from "@mapette/core";
 import { compass, fetchSpot, fetchSpots, type Spot } from "../spots";
 import { cycleTheme, initTheme, themePref } from "../theme";
-import SpotMap, { type SpotRef } from "./SpotMap.vue";
+import { KEEP_SOURCES, spotStyle } from "../spot-style";
+import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
 
-const mapPadding = ref<PaddingOptions>({ top: 0, right: 0, bottom: 0, left: 0 });
 const meta = ref<{ count: number; mirrored: number; withHeading: number } | null>(null);
 
 // ---- 选中的机位，写进 ?spot=pageid.分片，链接可分享 ----
@@ -29,7 +28,7 @@ async function pick(r: SpotRef | null) {
   if (seq !== pickSeq) return;
   focus.value = spot;
   sheet.value = "half";
-  document.querySelector(".meisho-sheet-body")?.scrollTo({ top: 0 });
+  document.querySelector(".mapette-sheet-body")?.scrollTo({ top: 0 });
 }
 watch(focusRef, (r) => {
   const url = new URL(location.href);
@@ -51,10 +50,11 @@ async function onView(refs: SpotRef[] | null) {
   if (seq === viewSeq) inView.value = spots;
 }
 
-// 手机端抽屉：收起 / 半屏 / 全屏（拖动与吸附由 MapSheet 处理），选中机位时打开到半屏
+// 手机端抽屉：收起 / 半屏 / 全屏（拖动与吸附由 mapette 处理），选中机位时打开到半屏
 const sheet = ref<SheetSnap>("half");
 
-const map = ref<InstanceType<typeof SpotMap>>();
+const explorer = ref<InstanceType<typeof MapExplorer>>();
+const flyTo = (center: [number, number], zoom: number) => explorer.value?.controller?.map.flyTo({ center, zoom, duration: 1600 });
 const PLACES = [
   { name: "京都", center: [135.775, 35.0] as [number, number], zoom: 13 },
   { name: "巴黎", center: [2.335, 48.857] as [number, number], zoom: 13 },
@@ -85,11 +85,10 @@ onMounted(() => {
   fetch("/data/meta.json").then((r) => r.json()).then((m) => (meta.value = m), () => {});
   const [id, shard] = (new URLSearchParams(location.search).get("spot") ?? "").split(".");
   if (Number(id) && shard) void pick({ id: Number(id), shard });
-  addEventListener("keydown", onKey);
 });
-onBeforeUnmount(() => removeEventListener("keydown", onKey));
-function onKey(e: KeyboardEvent) {
-  if (e.key === "Escape" && focusRef.value) void pick(null);
+// Esc 退一层：关掉机位详情
+function onEscape() {
+  if (focusRef.value) void pick(null);
 }
 
 const themeIcon = computed(() => ({ auto: ICONS.themeAuto, light: ICONS.themeLight, dark: ICONS.themeDark })[themePref.value]);
@@ -97,10 +96,18 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
 </script>
 
 <template>
-  <div class="app">
-    <SpotMap ref="map" :focus="focus" :padding="mapPadding" @pick="pick" @view="onView" />
+  <MapExplorer
+    ref="explorer"
+    v-model:snap="sheet"
+    :map-style="spotStyle"
+    locale="zh-Hans"
+    :keep-sources="KEEP_SOURCES"
+    :labels="{ locate: '定位', zoomIn: '放大', zoomOut: '缩小' }"
+    :shortcuts="{ t: cycleTheme }"
+    @escape="onEscape"
+  >
+    <template #map><SpotLayers :focus="focus" @pick="pick" @view="onView" /></template>
 
-    <MapSheet v-model:snap="sheet" @update:padding="mapPadding = $event">
       <template #header>
       <div class="head">
         <div class="brand">
@@ -187,7 +194,7 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
         <section v-else class="intro">
           <p>每个点都是一张高质量照片真实的拍摄位置：坐标来自相机 EXIF，附样片、焦距、光圈和许可信息。放大地图，或者从这里开始：</p>
           <div class="places">
-            <button v-for="p in PLACES" :key="p.name" class="chip" @click="map?.flyTo(p.center, p.zoom)">{{ p.name }}</button>
+            <button v-for="p in PLACES" :key="p.name" class="chip" @click="flyTo(p.center, p.zoom)">{{ p.name }}</button>
           </div>
         </section>
       </div>
@@ -198,8 +205,7 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
         地图 © <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
       </div>
       </template>
-    </MapSheet>
-  </div>
+  </MapExplorer>
 </template>
 
 <style>
@@ -210,8 +216,8 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--meisho-bg-solid);
-  color: var(--meisho-fg);
+  background: var(--mapette-bg-solid);
+  color: var(--mapette-fg);
 }
 :root {
   font-family: -apple-system, system-ui, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
@@ -221,15 +227,11 @@ a {
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--meisho-scroll-thumb) transparent;
+  scrollbar-color: var(--mapette-scroll-thumb) transparent;
 }
 </style>
 
 <style scoped>
-.app {
-  position: fixed;
-  inset: 0;
-}
 .head {
   flex: none;
   display: flex;
@@ -249,7 +251,7 @@ a {
   width: 34px;
   height: 34px;
   color: #fff;
-  background: var(--meisho-accent);
+  background: var(--mapette-accent);
   border-radius: 10px;
   font-size: 18px;
 }
@@ -272,7 +274,7 @@ h1 {
   line-height: 1.5;
 }
 .muted {
-  color: var(--meisho-muted);
+  color: var(--mapette-muted);
 }
 .stat {
   font-variant-numeric: tabular-nums;
@@ -283,7 +285,7 @@ h1 {
   width: 30px;
   height: 30px;
   padding: 0;
-  color: var(--meisho-muted);
+  color: var(--mapette-muted);
   background: none;
   border: 0;
   border-radius: 8px;
@@ -291,15 +293,15 @@ h1 {
 }
 .icon-btn:hover,
 .text-btn:hover {
-  background: var(--meisho-hover);
-  color: var(--meisho-fg);
+  background: var(--mapette-hover);
+  color: var(--mapette-fg);
 }
 .text-btn {
   padding: 4px 8px;
   margin-left: -6px;
   font: inherit;
   font-size: 13px;
-  color: var(--meisho-muted);
+  color: var(--mapette-muted);
   background: none;
   border: 0;
   border-radius: 8px;
@@ -322,14 +324,14 @@ h1 {
   padding: 6px 12px;
   font: inherit;
   font-size: 13px;
-  color: var(--meisho-fg);
-  background: var(--meisho-hover);
+  color: var(--mapette-fg);
+  background: var(--mapette-hover);
   border: 0;
   border-radius: 999px;
   cursor: pointer;
 }
 .chip:hover {
-  background: var(--meisho-line);
+  background: var(--mapette-line);
 }
 
 /* ---- 视野列表 ---- */
@@ -353,7 +355,7 @@ h1 {
   padding: 0;
   font: inherit;
   text-align: left;
-  color: var(--meisho-fg);
+  color: var(--mapette-fg);
   background: none;
   border: 0;
   cursor: pointer;
@@ -363,7 +365,7 @@ h1 {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: 8px;
-  background: var(--meisho-hover);
+  background: var(--mapette-hover);
 }
 .thumb span {
   font-size: 12px;
@@ -375,7 +377,7 @@ h1 {
   overflow-wrap: anywhere;
 }
 .thumb:hover img {
-  outline: 2px solid var(--meisho-accent);
+  outline: 2px solid var(--mapette-accent);
 }
 
 /* ---- 详情 ---- */
@@ -390,7 +392,7 @@ h1 {
   max-height: 60vh;
   border-radius: 10px;
   overflow: hidden;
-  background: var(--meisho-hover);
+  background: var(--mapette-hover);
 }
 .photo img {
   display: block;
@@ -410,7 +412,7 @@ h2 {
   margin: 2px 2px 0;
   padding: 2px 8px;
   font-size: 11px;
-  color: var(--meisho-accent);
+  color: var(--mapette-accent);
   border: 1px solid currentColor;
   border-radius: 999px;
 }
@@ -423,10 +425,10 @@ h2 {
   grid-template-columns: 40px 1fr;
   gap: 8px;
   padding: 5px 0;
-  border-bottom: 1px solid var(--meisho-line);
+  border-bottom: 1px solid var(--mapette-line);
 }
 .facts dt {
-  color: var(--meisho-muted);
+  color: var(--mapette-muted);
 }
 .facts dd {
   margin: 0;
@@ -446,7 +448,7 @@ h2 {
   gap: 2px;
   padding: 8px 10px;
   font-size: 11px;
-  background: var(--meisho-hover);
+  background: var(--mapette-hover);
   border-radius: 8px;
 }
 .settings b {
@@ -466,13 +468,13 @@ h2 {
   padding: 8px 12px;
   font-size: 13px;
   text-decoration: none;
-  background: var(--meisho-hover);
+  background: var(--mapette-hover);
   border-radius: 9px;
 }
 .btn.primary {
   flex: 1;
   color: #fff;
-  background: var(--meisho-accent);
+  background: var(--mapette-accent);
 }
 .credit {
   margin: 14px 2px 4px;
