@@ -17,6 +17,9 @@ importers:
       maplibre-gl:
         specifier: ^5.9.0
         version: 5.24.0
+      meisho:
+        specifier: link:..\meisho
+        version: link:../meisho
       pmtiles:
         specifier: ^4.5.0
         version: 4.5.0

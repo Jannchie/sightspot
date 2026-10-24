@@ -62,12 +62,5 @@ export async function fetchSpots(refs: { id: number; shard: string }[]): Promise
   });
 }
 
-/** 35mm 等效焦距 → 水平视角（度）；没有等效焦距时不画扇形的宽度，用 60° */
-export function fieldOfView(spot: Spot): number {
-  const f = spot.focal35;
-  if (!f) return 60;
-  return (2 * Math.atan(36 / (2 * f)) * 180) / Math.PI;
-}
-
 const COMPASS = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
 export const compass = (deg: number) => COMPASS[Math.round(deg / 45) % 8];

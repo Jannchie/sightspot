@@ -1,16 +1,17 @@
 <script setup lang="ts">
-// 页面骨架沿用 junrei 的 JunreiApp：全屏地图 + 桌面端左侧面板 / 手机端底部抽屉，面板挡住的部分作为地图留白
+// 页面骨架：全屏地图 + meisho 的 MapSheet（桌面端左侧面板 / 手机端底部抽屉），面板挡住的部分作为地图留白
 import { JIcon } from "@jannchie/icons-vue";
+import "meisho/meisho.css";
+import { MapSheet, type SheetSnap } from "meisho/vue";
+import type { PaddingOptions } from "maplibre-gl";
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
-import "../theme.css";
 import { ICONS } from "../icons";
-import { compass, fetchSpot, fetchSpots, fieldOfView, type Spot } from "../spots";
+import { directions, fieldOfView } from "meisho/style";
+import { compass, fetchSpot, fetchSpots, type Spot } from "../spots";
 import { cycleTheme, initTheme, themePref } from "../theme";
 import SpotMap, { type SpotRef } from "./SpotMap.vue";
 
-const app = ref<HTMLDivElement>();
-const panel = ref<HTMLElement>();
-const mapPadding = ref({ top: 0, right: 0, bottom: 0, left: 0 });
+const mapPadding = ref<PaddingOptions>({ top: 0, right: 0, bottom: 0, left: 0 });
 const meta = ref<{ count: number; mirrored: number; withHeading: number } | null>(null);
 
 // ---- 选中的机位，写进 ?spot=pageid.分片，链接可分享 ----
@@ -28,7 +29,7 @@ async function pick(r: SpotRef | null) {
   if (seq !== pickSeq) return;
   focus.value = spot;
   sheet.value = "half";
-  panel.value?.querySelector(".body")?.scrollTo({ top: 0 });
+  document.querySelector(".meisho-sheet-body")?.scrollTo({ top: 0 });
 }
 watch(focusRef, (r) => {
   const url = new URL(location.href);
@@ -50,11 +51,8 @@ async function onView(refs: SpotRef[] | null) {
   if (seq === viewSeq) inView.value = spots;
 }
 
-// ---- 手机端抽屉：收起 / 半屏 / 全屏，点把手切换 ----
-const sheet = ref<"peek" | "half" | "full">("peek");
-function toggleSheet() {
-  sheet.value = sheet.value === "peek" ? "half" : sheet.value === "half" ? "full" : "peek";
-}
+// 手机端抽屉：收起 / 半屏 / 全屏（拖动与吸附由 MapSheet 处理），选中机位时打开到半屏
+const sheet = ref<SheetSnap>("half");
 
 const map = ref<InstanceType<typeof SpotMap>>();
 const PLACES = [
@@ -78,34 +76,18 @@ const settings = computed(() => {
   if (s.iso) out.push({ label: "ISO", value: String(s.iso) });
   return out;
 });
-const navUrl = (s: Spot) => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
-const appleUrl = (s: Spot) => `https://maps.apple.com/?daddr=${s.lat},${s.lng}`;
+const navUrl = (s: Spot) => directions.google(s.lat, s.lng);
+const appleUrl = (s: Spot) => directions.apple(s.lat, s.lng);
 const coords = (s: Spot) => `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
 
-let observer: ResizeObserver | undefined;
 onMounted(() => {
   initTheme();
   fetch("/data/meta.json").then((r) => r.json()).then((m) => (meta.value = m), () => {});
-  observer = new ResizeObserver(() => {
-    const a = app.value!.getBoundingClientRect();
-    const r = panel.value!.getBoundingClientRect();
-    const beside = r.width < a.width * 0.6; // 桌面端在左侧，手机端在底部
-    const next = beside
-      ? { top: 0, right: 0, bottom: 0, left: Math.round(r.right - a.left) }
-      : { top: 0, right: 0, bottom: Math.round(a.bottom - r.top), left: 0 };
-    const cur = mapPadding.value;
-    if (cur.bottom !== next.bottom || cur.left !== next.left) mapPadding.value = next;
-  });
-  observer.observe(panel.value!);
-  observer.observe(app.value!);
   const [id, shard] = (new URLSearchParams(location.search).get("spot") ?? "").split(".");
   if (Number(id) && shard) void pick({ id: Number(id), shard });
   addEventListener("keydown", onKey);
 });
-onBeforeUnmount(() => {
-  observer?.disconnect();
-  removeEventListener("keydown", onKey);
-});
+onBeforeUnmount(() => removeEventListener("keydown", onKey));
 function onKey(e: KeyboardEvent) {
   if (e.key === "Escape" && focusRef.value) void pick(null);
 }
@@ -115,12 +97,12 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
 </script>
 
 <template>
-  <div ref="app" class="app" :style="{ '--panel-inset-bottom': `${mapPadding.bottom}px` }">
+  <div class="app">
     <SpotMap ref="map" :focus="focus" :padding="mapPadding" @pick="pick" @view="onView" />
 
-    <aside ref="panel" class="panel" :class="`sheet-${sheet}`">
-      <div class="handle" @click="toggleSheet" />
-      <header class="head">
+    <MapSheet v-model:snap="sheet" @update:padding="mapPadding = $event">
+      <template #header>
+      <div class="head">
         <div class="brand">
           <span class="mark"><JIcon :icon="ICONS.camera" /></span>
           <div>
@@ -132,7 +114,8 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
           </div>
         </div>
         <button class="icon-btn" :title="themeLabel" :aria-label="themeLabel" @click="cycleTheme"><JIcon :icon="themeIcon" /></button>
-      </header>
+      </div>
+      </template>
 
       <div class="body">
         <!-- 机位详情 -->
@@ -157,7 +140,7 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
             <div><dt>位置</dt><dd class="stat">{{ coords(focus) }}</dd></div>
             <div v-if="focus.heading != null">
               <dt>朝向</dt>
-              <dd class="stat">{{ focus.heading }}° {{ compass(focus.heading) }}，视角约 {{ Math.round(fieldOfView(focus)) }}°</dd>
+              <dd class="stat">{{ focus.heading }}° {{ compass(focus.heading) }}，视角约 {{ Math.round(fieldOfView(focus.focal35)) }}°</dd>
             </div>
             <div v-if="focus.taken"><dt>拍摄</dt><dd class="stat">{{ focus.taken }}</dd></div>
             <div v-if="focus.camera"><dt>相机</dt><dd>{{ focus.camera }}</dd></div>
@@ -209,11 +192,13 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
         </section>
       </div>
 
-      <footer class="foot muted">
+      <template #footer>
+      <div class="foot muted">
         照片来自 <a href="https://commons.wikimedia.org/wiki/Commons:Quality_images" target="_blank" rel="noopener">Wikimedia Commons</a>，版权归各作者 ·
         地图 © <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
-      </footer>
-    </aside>
+      </div>
+      </template>
+    </MapSheet>
   </div>
 </template>
 
@@ -225,8 +210,8 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--bg-solid);
-  color: var(--fg);
+  background: var(--meisho-bg-solid);
+  color: var(--meisho-fg);
 }
 :root {
   font-family: -apple-system, system-ui, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
@@ -236,7 +221,7 @@ a {
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
+  scrollbar-color: var(--meisho-scroll-thumb) transparent;
 }
 </style>
 
@@ -245,61 +230,6 @@ a {
   position: fixed;
   inset: 0;
 }
-.panel {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  bottom: 12px;
-  width: 380px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  backdrop-filter: var(--glass);
-  overflow: hidden;
-}
-.handle {
-  display: none;
-}
-@media (max-width: 640px) {
-  .panel {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    padding-bottom: env(safe-area-inset-bottom);
-    border-radius: 16px 16px 0 0;
-    transition: height 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .sheet-peek {
-    height: calc(84px + env(safe-area-inset-bottom));
-  }
-  .sheet-half {
-    height: 52dvh;
-  }
-  .sheet-full {
-    height: calc(100dvh - 48px - env(safe-area-inset-top));
-  }
-  .handle {
-    display: block;
-    flex: none;
-    height: 22px;
-    margin-bottom: -10px;
-    cursor: pointer;
-  }
-  .handle::before {
-    content: "";
-    display: block;
-    width: 36px;
-    height: 5px;
-    margin: 8px auto 0;
-    border-radius: 3px;
-    background: var(--muted);
-    opacity: 0.45;
-  }
-}
 .head {
   flex: none;
   display: flex;
@@ -307,7 +237,6 @@ a {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 14px 12px 16px;
-  border-bottom: 1px solid var(--line);
 }
 .brand {
   display: flex;
@@ -320,7 +249,7 @@ a {
   width: 34px;
   height: 34px;
   color: #fff;
-  background: var(--accent);
+  background: var(--meisho-accent);
   border-radius: 10px;
   font-size: 18px;
 }
@@ -334,9 +263,6 @@ h1 {
   font-size: 12px;
 }
 .body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   padding: 12px;
 }
 .foot {
@@ -344,10 +270,9 @@ h1 {
   padding: 8px 14px 10px;
   font-size: 11px;
   line-height: 1.5;
-  border-top: 1px solid var(--line);
 }
 .muted {
-  color: var(--muted);
+  color: var(--meisho-muted);
 }
 .stat {
   font-variant-numeric: tabular-nums;
@@ -358,7 +283,7 @@ h1 {
   width: 30px;
   height: 30px;
   padding: 0;
-  color: var(--muted);
+  color: var(--meisho-muted);
   background: none;
   border: 0;
   border-radius: 8px;
@@ -366,15 +291,15 @@ h1 {
 }
 .icon-btn:hover,
 .text-btn:hover {
-  background: var(--hover);
-  color: var(--fg);
+  background: var(--meisho-hover);
+  color: var(--meisho-fg);
 }
 .text-btn {
   padding: 4px 8px;
   margin-left: -6px;
   font: inherit;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--meisho-muted);
   background: none;
   border: 0;
   border-radius: 8px;
@@ -397,14 +322,14 @@ h1 {
   padding: 6px 12px;
   font: inherit;
   font-size: 13px;
-  color: var(--fg);
-  background: var(--hover);
+  color: var(--meisho-fg);
+  background: var(--meisho-hover);
   border: 0;
   border-radius: 999px;
   cursor: pointer;
 }
 .chip:hover {
-  background: var(--line);
+  background: var(--meisho-line);
 }
 
 /* ---- 视野列表 ---- */
@@ -428,7 +353,7 @@ h1 {
   padding: 0;
   font: inherit;
   text-align: left;
-  color: var(--fg);
+  color: var(--meisho-fg);
   background: none;
   border: 0;
   cursor: pointer;
@@ -438,7 +363,7 @@ h1 {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: 8px;
-  background: var(--hover);
+  background: var(--meisho-hover);
 }
 .thumb span {
   font-size: 12px;
@@ -450,7 +375,7 @@ h1 {
   overflow-wrap: anywhere;
 }
 .thumb:hover img {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--meisho-accent);
 }
 
 /* ---- 详情 ---- */
@@ -465,7 +390,7 @@ h1 {
   max-height: 60vh;
   border-radius: 10px;
   overflow: hidden;
-  background: var(--hover);
+  background: var(--meisho-hover);
 }
 .photo img {
   display: block;
@@ -485,7 +410,7 @@ h2 {
   margin: 2px 2px 0;
   padding: 2px 8px;
   font-size: 11px;
-  color: var(--accent);
+  color: var(--meisho-accent);
   border: 1px solid currentColor;
   border-radius: 999px;
 }
@@ -498,10 +423,10 @@ h2 {
   grid-template-columns: 40px 1fr;
   gap: 8px;
   padding: 5px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--meisho-line);
 }
 .facts dt {
-  color: var(--muted);
+  color: var(--meisho-muted);
 }
 .facts dd {
   margin: 0;
@@ -521,7 +446,7 @@ h2 {
   gap: 2px;
   padding: 8px 10px;
   font-size: 11px;
-  background: var(--hover);
+  background: var(--meisho-hover);
   border-radius: 8px;
 }
 .settings b {
@@ -541,13 +466,13 @@ h2 {
   padding: 8px 12px;
   font-size: 13px;
   text-decoration: none;
-  background: var(--hover);
+  background: var(--meisho-hover);
   border-radius: 9px;
 }
 .btn.primary {
   flex: 1;
   color: #fff;
-  background: var(--accent);
+  background: var(--meisho-accent);
 }
 .credit {
   margin: 14px 2px 4px;
