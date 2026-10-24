@@ -13,8 +13,8 @@
   "dependencies": {
     "@jannchie/icons": "0.12.0",
     "@jannchie/icons-vue": "0.12.0",
-    "@mapette/core": "link:../mapette/packages/core",
-    "@mapette/vue": "link:../mapette/packages/vue",
+    "@mapette/core": "^0.1.0",
+    "@mapette/vue": "^0.1.0",
     "maplibre-gl": "^5.9.0",
     "pmtiles": "^4.5.0",
     "vue": "^3.5.30"
