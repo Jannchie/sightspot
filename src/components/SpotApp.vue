@@ -7,7 +7,7 @@ import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
-import { fetchSpot, fetchSpots, type Spot } from "../spots";
+import { fetchSpot, fetchSpots, pickDesc, type Spot } from "../spots";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
 import "@mapette/core/mapette.css";
 
@@ -79,6 +79,8 @@ const PLACES = [
 
 // ---- 详情的展示字段 ----
 const f = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ""));
+const description = computed(() => focus.value && pickDesc(focus.value.desc, locale));
+
 const settings = computed(() => {
   const s = focus.value;
   if (!s) return [];
@@ -162,6 +164,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           <span v-if="focus.featured" class="badge">{{ t.featured }}</span>
           <span v-if="focus.contest" class="badge">{{ t.contest[focus.contest] }}</span>
         </p>
+        <p v-if="description" class="desc" :lang="description.lang">{{ description.text }}</p>
 
         <dl class="facts">
           <div><dt>{{ t.position }}</dt><dd class="stat">{{ coords(focus) }}</dd></div>
@@ -408,6 +411,12 @@ h2 {
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.desc {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  line-height: 1.6;
   overflow-wrap: anywhere;
 }
 .badges {

@@ -2,10 +2,11 @@
 
 只收真实拍摄点：EXIF GPS 与页面坐标一致的照片。
   public/data/spots.geojson   全部机位的坐标（地图热力图与点），属性 i = Commons pageid，s = 详情分片
-  public/data/d/{s}.json      机位详情。按空间四叉树分片（每片最多 SHARD_MAX 个），
+  public/data/d/{s}.json      机位详情（含站点四种语言的描述，没有时留原文）。按空间四叉树分片（每片最多 SHARD_MAX 个），
                               视野里的机位多半落在同一两片里，浏览一片区域只需加载几个小文件
 
   python -I -X utf8 scripts/export_demo.py --src <commons_spots/out>
+描述来自 spots.jsonl 的 description，早期抓的照片没有这个字段，用 commons_spots.py --descriptions 补到 descriptions.jsonl。
 """
 
 import argparse
@@ -14,6 +15,14 @@ import re
 from pathlib import Path
 
 SHARD_MAX = 200
+DESC_MAX = 400
+# Commons 的语言代码 → 站点的语言；其他语言只留一段原文（键 "_"），站点语言都没有时显示它
+DESC_LANGS = {"zh": "zh-Hans", "zh-hans": "zh-Hans", "zh-cn": "zh-Hans", "zh-sg": "zh-Hans",
+              "zh-hant": "zh-Hant", "zh-tw": "zh-Hant", "zh-hk": "zh-Hant", "zh-mo": "zh-Hant",
+              "ja": "ja", "en": "en"}
+# WLM / WLE 模板自动加的一句："This is a photo of a monument in Spain, number: RI-51-0001234"
+BOILERPLATE = re.compile(r"This is a (?:photo|image) of (?:a |an )?[^.:]*?(?:monument|heritage|protected area|listed building|natural)[^:]*?"
+                         r"(?:number|ID|id|identified by)\s*:?\s*[\w./()\-]*\.?", re.I)
 CDN = "https://cdn.jannchie.com/photo-spots/commons/"
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -67,6 +76,26 @@ def taken(v):
     return f"{m[1]}-{m[2]}-{m[3]}" if m else None
 
 
+def clip(v):
+    v = re.sub(r"\s+", " ", BOILERPLATE.sub("", v)).strip(" ,;")
+    return v if len(v) <= DESC_MAX else v[:DESC_MAX - 1].rstrip() + "…"
+
+
+def descriptions(d, title):
+    """{Commons 语言: 文本} → {站点语言 或 "_": 文本}，去掉模板句、和标题重复的"""
+    out = {}
+    for k, v in (d or {}).items():
+        v = clip(v)
+        if not v or v == title:
+            continue
+        site = DESC_LANGS.get(k.lower())
+        if site:
+            out.setdefault(site, v)
+        elif "_" not in out:
+            out["_"] = v
+    return out or None
+
+
 def commons_thumb(s, width):
     """没镜像的照片先用 Commons 的缩略图；原图不够宽时 thumb_url 就是原图"""
     url = s["thumb_url"] or s["original_url"]
@@ -105,10 +134,16 @@ def main():
     # 一张照片可能同时在几个分类里（例如既是 QI 又是 WLM 入选作品）：以 members.jsonl 的全部记录为准
     cats: dict[int, set[str]] = {}
     for line in open(src / "members.jsonl", encoding="utf-8"):
-        if line.endswith("
-"):
+        if line.endswith("\n"):
             m = json.loads(line)
             cats.setdefault(m["pageid"], set()).add(m["cat"])
+
+    desc = {}
+    if (src / "descriptions.jsonl").exists():
+        for line in open(src / "descriptions.jsonl", encoding="utf-8"):
+            if line.endswith("\n"):
+                r = json.loads(line)
+                desc[r["pageid"]] = r["description"]
 
     for line in open(src / "spots.jsonl", encoding="utf-8"):
         s = json.loads(line)
@@ -117,8 +152,10 @@ def main():
         i, ex = s["pageid"], s["exif"]
         m = i in mirrored
         heading = ratio(ex.get("GPSImgDirection"))
+        name = title(s)
         details[i] = {
-            "title": title(s),
+            "title": name,
+            "desc": descriptions(s["description"] if "description" in s else desc.get(i), name),
             "page": s["page_url"],
             "lng": s["lon"],
             "lat": s["lat"],
@@ -159,6 +196,7 @@ def main():
     (data / "meta.json").write_text(json.dumps({
         "count": len(details), "mirrored": sum(1 for d in details.values() if d["mirrored"]),
         "withHeading": sum(1 for d in details.values() if d["heading"] is not None),
+        "withDesc": sum(1 for d in details.values() if d["desc"]),
     }), encoding="utf-8")
     for k, ids in shards.items():
         (data / "d" / f"{k}.json").write_text(json.dumps({i: details[i] for i in ids}, ensure_ascii=False, separators=(",", ":")),

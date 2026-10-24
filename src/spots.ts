@@ -1,10 +1,14 @@
 // 机位详情：按空间分片存放在 /data/d/{shard}.json（scripts/export_demo.py），同一分片只请求一次。
 
+import type { Locale } from "@mapette/core";
+
 export interface Spot {
   id: number;
   /** 详情所在的分片 */
   shard: string;
   title: string;
+  /** Commons 上的描述：站点语言各一段，"_" 是站点语言都没有时留的原文 */
+  desc: Partial<Record<Locale | "_", string>> | null;
   /** Commons 文件页 */
   page: string;
   lng: number;
@@ -32,6 +36,16 @@ export interface Spot {
   iso: number | null;
   /** 拍摄朝向，正北为 0°，顺时针 */
   heading: number | null;
+}
+
+/** 按当前语言取描述：另一种中文、英文、原文依次兜底；返回文本和它的语言（原文语言未知） */
+export function pickDesc(desc: Spot["desc"], locale: Locale): { text: string; lang?: string } | null {
+  if (!desc) return null;
+  const other: Locale | undefined = locale === "zh-Hans" ? "zh-Hant" : locale === "zh-Hant" ? "zh-Hans" : undefined;
+  for (const k of [locale, other, "en" as const]) {
+    if (k && desc[k]) return { text: desc[k]!, lang: k };
+  }
+  return desc._ ? { text: desc._ } : null;
 }
 
 const shards = new Map<string, Promise<Record<string, Omit<Spot, "id" | "shard">>>>();
