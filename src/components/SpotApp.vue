@@ -9,6 +9,7 @@ import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
 import { fetchSpot, fetchSpots, type Spot } from "../spots";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
+import "@mapette/core/mapette.css";
 
 const props = defineProps<{ lang: Locale }>();
 const { locale, t } = provideLocale(props.lang);
@@ -17,7 +18,13 @@ const { locale, t } = provideLocale(props.lang);
 const THEME_KEY = "photo-spots:theme";
 const { cycle: cycleTheme } = useThemePref(THEME_KEY);
 
-const meta = ref<{ count: number; mirrored: number; withHeading: number } | null>(null);
+interface Meta {
+  count: number;
+  mirrored: number;
+  withHeading: number;
+  withDesc?: number;
+}
+const meta = ref<Meta | null>(null);
 
 // ---- 选中的机位，写进 ?spot=pageid.分片，链接可分享 ----
 const focus = shallowRef<Spot | null>(null);
@@ -88,7 +95,7 @@ const coords = (s: Spot) => `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
 const compass = (deg: number) => t.compass[Math.round(deg / 45) % 8];
 
 onMounted(() => {
-  fetch("/data/meta.json").then((r) => r.json()).then((m) => (meta.value = m), () => {});
+  fetch("/data/meta.json").then((r) => r.json() as Promise<Meta>).then((m) => (meta.value = m), () => {});
   const [id, shard] = (new URLSearchParams(location.search).get("spot") ?? "").split(".");
   if (Number(id) && shard) void pick({ id: Number(id), shard });
 });
