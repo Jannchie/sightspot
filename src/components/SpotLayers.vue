@@ -93,9 +93,9 @@ async function images(features: MapGeoJSONFeature[]) {
 
 <template>
   <!-- 点气泡：不放大，弹出卡片显示里面机位的样片 -->
-  <ClusterPopover source="spots" :labels="{ close: '关闭' }">
-    <template #default="{ features, count, close, zoomIn }">
-      <SpotCluster :features="features" :count="count" @pick="(r) => { close(); emit('pick', r); }" @zoom-in="zoomIn" />
+  <ClusterPopover source="spots">
+    <template #default="{ features, count, close }">
+      <SpotCluster :features="features" :count="count" @pick="(r) => { close(); emit('pick', r); }" />
     </template>
   </ClusterPopover>
   <PhotoPins
@@ -107,7 +107,7 @@ async function images(features: MapGeoJSONFeature[]) {
     :max="24"
     @pick="(f) => pick(toRef(f))"
   />
-  <MapPopover :lng-lat="popoverAt" close-label="关闭" @close="emit('close')">
+  <MapPopover :lng-lat="popoverAt" @close="emit('close')">
     <div v-if="focus" class="spot-pop">
       <img :src="focus.small" alt="" :style="{ aspectRatio: `${focus.w} / ${focus.h}` }" />
       <div class="spot-pop-text">

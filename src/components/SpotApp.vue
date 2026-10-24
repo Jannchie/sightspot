@@ -1,15 +1,21 @@
 <script setup lang="ts">
-// 页面：骨架（地图、侧栏 / 抽屉、留白、键盘操作）是 mapette 的 MapExplorer，这里只有机位自己的图层和面板内容
+// 页面：骨架（地图、侧栏 / 抽屉、留白、键盘操作、页脚）来自 @mapette/vue，这里只有机位自己的图层和面板内容
 import { JIcon } from "@jannchie/icons-vue";
-import { type SheetSnap } from "@mapette/core";
-import { MapExplorer } from "@mapette/vue";
+import { baseShortcuts, directions, fieldOfView, switchLocaleUrl, type Locale, type SheetSnap } from "@mapette/core";
+import { MapExplorer, MapFooter, useThemePref } from "@mapette/vue";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
-import { directions, fieldOfView } from "@mapette/core";
-import { compass, fetchSpot, fetchSpots, type Spot } from "../spots";
-import { cycleTheme, initTheme, themePref } from "../theme";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
+import { fetchSpot, fetchSpots, type Spot } from "../spots";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
+
+const props = defineProps<{ lang: Locale }>();
+const { locale, t } = provideLocale(props.lang);
+
+/** 外观偏好由 mapette 管（页脚按钮与 T 快捷键共用）；存储键与 void.config.ts 的首屏脚本一致 */
+const THEME_KEY = "photo-spots:theme";
+const { cycle: cycleTheme } = useThemePref(THEME_KEY);
 
 const meta = ref<{ count: number; mirrored: number; withHeading: number } | null>(null);
 
@@ -56,13 +62,13 @@ const sheet = ref<SheetSnap>("half");
 const explorer = ref<InstanceType<typeof MapExplorer>>();
 const flyTo = (center: [number, number], zoom: number) => explorer.value?.controller?.map.flyTo({ center, zoom, duration: 1600 });
 const PLACES = [
-  { name: "京都", center: [135.775, 35.0] as [number, number], zoom: 13 },
-  { name: "巴黎", center: [2.335, 48.857] as [number, number], zoom: 13 },
-  { name: "柏林", center: [13.39, 52.515] as [number, number], zoom: 13 },
-  { name: "布拉格", center: [14.418, 50.087] as [number, number], zoom: 14 },
-  { name: "纽约", center: [-73.985, 40.75] as [number, number], zoom: 13 },
-  { name: "阿尔卑斯", center: [8.0, 46.55] as [number, number], zoom: 9.5 },
-];
+  { key: "kyoto", center: [135.775, 35.0] as [number, number], zoom: 13 },
+  { key: "paris", center: [2.335, 48.857] as [number, number], zoom: 13 },
+  { key: "berlin", center: [13.39, 52.515] as [number, number], zoom: 13 },
+  { key: "prague", center: [14.418, 50.087] as [number, number], zoom: 14 },
+  { key: "newYork", center: [-73.985, 40.75] as [number, number], zoom: 13 },
+  { key: "alps", center: [8.0, 46.55] as [number, number], zoom: 9.5 },
+] as const;
 
 // ---- 详情的展示字段 ----
 const f = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ""));
@@ -70,29 +76,36 @@ const settings = computed(() => {
   const s = focus.value;
   if (!s) return [];
   const out: { label: string; value: string }[] = [];
-  if (s.focal) out.push({ label: "焦距", value: s.focal35 && Math.abs(s.focal35 - s.focal) > 1 ? `${f(s.focal)}mm（等效 ${f(s.focal35)}mm）` : `${f(s.focal)}mm` });
-  if (s.fnumber) out.push({ label: "光圈", value: `f/${f(s.fnumber)}` });
-  if (s.exposure) out.push({ label: "快门", value: `${s.exposure} s` });
+  if (s.focal) out.push({ label: t.focal, value: t.focalValue(f(s.focal), s.focal35 && Math.abs(s.focal35 - s.focal) > 1 ? f(s.focal35) : null) });
+  if (s.fnumber) out.push({ label: t.aperture, value: `f/${f(s.fnumber)}` });
+  if (s.exposure) out.push({ label: t.shutter, value: `${s.exposure} s` });
   if (s.iso) out.push({ label: "ISO", value: String(s.iso) });
   return out;
 });
 const navUrl = (s: Spot) => directions.google(s.lat, s.lng);
 const appleUrl = (s: Spot) => directions.apple(s.lat, s.lng);
 const coords = (s: Spot) => `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
+const compass = (deg: number) => t.compass[Math.round(deg / 45) % 8];
 
 onMounted(() => {
-  initTheme();
   fetch("/data/meta.json").then((r) => r.json()).then((m) => (meta.value = m), () => {});
   const [id, shard] = (new URLSearchParams(location.search).get("spot") ?? "").split(".");
   if (Number(id) && shard) void pick({ id: Number(id), shard });
 });
-// Esc 退一层：关掉机位详情
-function onEscape() {
-  if (focusRef.value) void pick(null);
-}
 
-const themeIcon = computed(() => ({ auto: ICONS.themeAuto, light: ICONS.themeLight, dark: ICONS.themeDark })[themePref.value]);
-const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外观：浅色", dark: "外观：深色" })[themePref.value]);
+// ---- 键盘：Esc 退一层（关掉机位详情；快捷键说明开着时交给它自己关），T 外观，? 快捷键说明 ----
+const footer = ref<InstanceType<typeof MapFooter>>();
+const shortcuts = {
+  Escape: () => {
+    if (footer.value?.shortcutsOpen() || !focusRef.value) return false;
+    void pick(null);
+  },
+  t: () => cycleTheme(),
+  "?": () => footer.value?.toggleShortcuts(),
+};
+const SHORTCUTS = computed(() => [{ keys: ["Esc"], label: t.kbBack }, ...baseShortcuts(locale)]);
+const SOURCES = [{ label: "Wikimedia Commons", href: "https://commons.wikimedia.org/wiki/Commons:Quality_images" }];
+const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
 </script>
 
 <template>
@@ -100,111 +113,97 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
     ref="explorer"
     v-model:snap="sheet"
     :map-style="spotStyle"
-    locale="zh-Hans"
+    :locale="locale"
     :keep-sources="KEEP_SOURCES"
-    :labels="{ locate: '定位', zoomIn: '放大', zoomOut: '缩小' }"
-    :shortcuts="{ t: cycleTheme }"
-    @escape="onEscape"
+    :shortcuts="shortcuts"
   >
     <template #map><SpotLayers :focus="focus" @pick="pick" @view="onView" @close="pick(null)" /></template>
 
-      <template #header>
+    <template #header>
       <div class="head">
         <div class="brand">
           <span class="mark"><JIcon :icon="ICONS.camera" /></span>
           <div>
-            <h1>摄影机位地图</h1>
+            <h1>{{ t.brand }}</h1>
             <p class="muted stat">
-              <template v-if="meta">{{ meta.count.toLocaleString() }} 个真实拍摄点</template>
-              <template v-else>加载中…</template>
+              <template v-if="meta">{{ t.count(meta.count) }}</template>
+              <template v-else>{{ t.loading }}</template>
             </p>
           </div>
         </div>
-        <button class="icon-btn" :title="themeLabel" :aria-label="themeLabel" @click="cycleTheme"><JIcon :icon="themeIcon" /></button>
       </div>
-      </template>
+    </template>
 
-      <div class="body">
-        <!-- 机位详情 -->
-        <article v-if="focus" class="detail">
-          <div class="detail-bar">
-            <button class="text-btn" @click="pick(null)">← 返回</button>
-            <button class="icon-btn" title="关闭" aria-label="关闭" @click="pick(null)"><JIcon :icon="ICONS.close" /></button>
+    <div class="body">
+      <!-- 机位详情 -->
+      <article v-if="focus" class="detail">
+        <div class="detail-bar">
+          <button class="text-btn" @click="pick(null)">← {{ t.back }}</button>
+          <button class="icon-btn" :title="t.close" :aria-label="t.close" @click="pick(null)"><JIcon :icon="ICONS.close" /></button>
+        </div>
+        <a class="photo" :href="focus.page" target="_blank" rel="noopener" :style="{ aspectRatio: `${focus.w} / ${focus.h}` }">
+          <img
+            :key="focus.id"
+            :src="focus.large"
+            :srcset="`${focus.small} 500w, ${focus.large} 1280w`"
+            sizes="(max-width: 640px) 100vw, 356px"
+            :alt="focus.title"
+          />
+        </a>
+        <h2>{{ focus.title }}</h2>
+        <p v-if="focus.featured" class="badge">{{ t.featured }}</p>
+
+        <dl class="facts">
+          <div><dt>{{ t.position }}</dt><dd class="stat">{{ coords(focus) }}</dd></div>
+          <div v-if="focus.heading != null">
+            <dt>{{ t.heading }}</dt>
+            <dd class="stat">{{ t.headingValue(focus.heading, compass(focus.heading), Math.round(fieldOfView(focus.focal35))) }}</dd>
           </div>
-          <a class="photo" :href="focus.page" target="_blank" rel="noopener" :style="{ aspectRatio: `${focus.w} / ${focus.h}` }">
-            <img
-              :key="focus.id"
-              :src="focus.large"
-              :srcset="`${focus.small} 500w, ${focus.large} 1280w`"
-              sizes="(max-width: 640px) 100vw, 356px"
-              :alt="focus.title"
-            />
-          </a>
-          <h2>{{ focus.title }}</h2>
-          <p v-if="focus.featured" class="badge">Commons 精选图片</p>
+          <div v-if="focus.taken"><dt>{{ t.taken }}</dt><dd class="stat">{{ focus.taken }}</dd></div>
+          <div v-if="focus.camera"><dt>{{ t.camera }}</dt><dd>{{ focus.camera }}</dd></div>
+          <div v-if="focus.lens"><dt>{{ t.lens }}</dt><dd>{{ focus.lens }}</dd></div>
+        </dl>
+        <ul v-if="settings.length" class="settings">
+          <li v-for="x in settings" :key="x.label"><span class="muted">{{ x.label }}</span><b class="stat">{{ x.value }}</b></li>
+        </ul>
 
-          <dl class="facts">
-            <div><dt>位置</dt><dd class="stat">{{ coords(focus) }}</dd></div>
-            <div v-if="focus.heading != null">
-              <dt>朝向</dt>
-              <dd class="stat">{{ focus.heading }}° {{ compass(focus.heading) }}，视角约 {{ Math.round(fieldOfView(focus.focal35)) }}°</dd>
-            </div>
-            <div v-if="focus.taken"><dt>拍摄</dt><dd class="stat">{{ focus.taken }}</dd></div>
-            <div v-if="focus.camera"><dt>相机</dt><dd>{{ focus.camera }}</dd></div>
-            <div v-if="focus.lens"><dt>镜头</dt><dd>{{ focus.lens }}</dd></div>
-          </dl>
-          <ul v-if="settings.length" class="settings">
-            <li v-for="x in settings" :key="x.label"><span class="muted">{{ x.label }}</span><b class="stat">{{ x.value }}</b></li>
-          </ul>
+        <div class="actions">
+          <a class="btn primary" :href="navUrl(focus)" target="_blank" rel="noopener"><JIcon :icon="ICONS.navigate" />{{ t.navigate }}</a>
+          <a class="btn" :href="appleUrl(focus)" target="_blank" rel="noopener">{{ t.appleMaps }}</a>
+        </div>
 
-          <div class="actions">
-            <a class="btn primary" :href="navUrl(focus)" target="_blank" rel="noopener"><JIcon :icon="ICONS.navigate" />Google 地图导航</a>
-            <a class="btn" :href="appleUrl(focus)" target="_blank" rel="noopener">Apple 地图</a>
-          </div>
+        <p class="credit muted">
+          © {{ focus.artist ?? t.anonymous }} ·
+          <a v-if="focus.licenseUrl" :href="focus.licenseUrl" target="_blank" rel="noopener">{{ focus.license }}</a>
+          <template v-else>{{ focus.license }}</template>
+          · <a :href="focus.page" target="_blank" rel="noopener">Wikimedia Commons <JIcon :icon="ICONS.external" /></a>
+        </p>
+      </article>
 
-          <p class="credit muted">
-            © {{ focus.artist ?? "佚名" }} ·
-            <a v-if="focus.licenseUrl" :href="focus.licenseUrl" target="_blank" rel="noopener">{{ focus.license }}</a>
-            <template v-else>{{ focus.license }}</template>
-            · <a :href="focus.page" target="_blank" rel="noopener">Wikimedia Commons <JIcon :icon="ICONS.external" /></a>
-          </p>
-        </article>
+      <!-- 视野里的机位 -->
+      <section v-else-if="inView" class="list">
+        <p class="muted stat section-title">{{ t.inView(inView.length, inView.length >= 60) }}</p>
+        <p v-if="!inView.length" class="muted empty">{{ t.emptyHere }}</p>
+        <div class="grid">
+          <button v-for="s in inView" :key="s.id" class="thumb" :title="s.title" @click="pick({ id: s.id, shard: s.shard })">
+            <img :src="s.small" alt="" loading="lazy" />
+            <span>{{ s.title }}</span>
+          </button>
+        </div>
+      </section>
 
-        <!-- 视野里的机位 -->
-        <section v-else-if="inView" class="list">
-          <p class="muted stat section-title">
-            视野内 {{ inView.length }}{{ inView.length >= 60 ? "+" : "" }} 个机位{{ inView.length >= 60 ? "，显示离中心最近的 60 个" : "" }}
-          </p>
-          <p v-if="!inView.length" class="muted empty">这一带还没有收录的机位，换个地方看看。</p>
-          <div class="grid">
-            <button
-              v-for="s in inView"
-              :key="s.id"
-              class="thumb"
-              :title="s.title"
-              @click="pick({ id: s.id, shard: s.shard })"
-            >
-              <img :src="s.small" alt="" loading="lazy" />
-              <span>{{ s.title }}</span>
-            </button>
-          </div>
-        </section>
+      <!-- 还没放大到能看到单个机位 -->
+      <section v-else class="intro">
+        <p>{{ t.intro }}</p>
+        <div class="places">
+          <button v-for="p in PLACES" :key="p.key" class="chip" @click="flyTo(p.center, p.zoom)">{{ t.places[p.key] }}</button>
+        </div>
+      </section>
+    </div>
 
-        <!-- 还在热力图阶段 -->
-        <section v-else class="intro">
-          <p>每个点都是一张高质量照片真实的拍摄位置：坐标来自相机 EXIF，附样片、焦距、光圈和许可信息。放大地图，或者从这里开始：</p>
-          <div class="places">
-            <button v-for="p in PLACES" :key="p.name" class="chip" @click="flyTo(p.center, p.zoom)">{{ p.name }}</button>
-          </div>
-        </section>
-      </div>
-
-      <template #footer>
-      <div class="foot muted">
-        照片来自 <a href="https://commons.wikimedia.org/wiki/Commons:Quality_images" target="_blank" rel="noopener">Wikimedia Commons</a>，版权归各作者 ·
-        地图 © <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
-      </div>
-      </template>
+    <template #footer>
+      <MapFooter ref="footer" :locale="locale" :theme-key="THEME_KEY" :sources="SOURCES" :shortcuts="SHORTCUTS" @locale="switchLocale" />
+    </template>
   </MapExplorer>
 </template>
 
@@ -266,12 +265,6 @@ h1 {
 }
 .body {
   padding: 12px;
-}
-.foot {
-  flex: none;
-  padding: 8px 14px 10px;
-  font-size: 11px;
-  line-height: 1.5;
 }
 .muted {
   color: var(--mapette-muted);

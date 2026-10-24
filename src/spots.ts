@@ -61,6 +61,3 @@ export async function fetchSpots(refs: { id: number; shard: string }[]): Promise
     return d ? [{ id, shard, ...d }] : [];
   });
 }
-
-const COMPASS = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
-export const compass = (deg: number) => COMPASS[Math.round(deg / 45) % 8];

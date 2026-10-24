@@ -1,40 +1,63 @@
 <script setup lang="ts">
-// 气泡弹出卡片的内容（ClusterPopover 的插槽）：气泡里机位的样片缩略图，点一张就选中那个机位。
+// 气泡弹出菜单的内容（ClusterPopover 的插槽）：气泡里全部机位的样片缩略图，滚到底再加载下一批，点一张就选中那个机位。
+// 样片地址在 CDN 上的静态分片里（按空间分片，同一片区域的机位多半在同一两个文件里），按批取不会给服务器添负担。
 import type { Feature } from "geojson";
-import { shallowRef, watch } from "vue";
+import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
+import { useI18n } from "../i18n";
 import { fetchSpots, type Spot } from "../spots";
 import type { SpotRef } from "./SpotLayers.vue";
 
 const props = defineProps<{ features: Feature[]; count: number }>();
-const emit = defineEmits<{ pick: [ref: SpotRef]; zoomIn: [] }>();
+const emit = defineEmits<{ pick: [ref: SpotRef] }>();
 
-const SHOW = 9;
+const { t } = useI18n();
+const PAGE = 24;
+const refs = computed(() => props.features.map((f) => ({ id: Number(f.properties?.i), shard: String(f.properties?.s) })));
 const spots = shallowRef<Spot[]>([]);
-watch(() => props.features, async (fs) => {
-  const refs = fs.slice(0, SHOW).map((f) => ({ id: Number(f.properties?.i), shard: String(f.properties?.s) }));
-  const got = await fetchSpots(refs).catch(() => []);
-  if (fs === props.features) spots.value = got;
+let loading = false;
+
+async function more() {
+  const all = refs.value;
+  if (loading || spots.value.length >= all.length) return;
+  loading = true;
+  const got = await fetchSpots(all.slice(spots.value.length, spots.value.length + PAGE)).catch(() => []);
+  loading = false;
+  if (all !== refs.value) return;
+  spots.value = [...spots.value, ...got];
+}
+watch(refs, () => {
+  spots.value = [];
+  void more();
 }, { immediate: true });
+
+// 底部的哨兵进入可见区域（菜单滚到底）就加载下一批
+const sentinel = ref<HTMLElement>();
+let observer: IntersectionObserver | undefined;
+watch(sentinel, (el) => {
+  observer?.disconnect();
+  if (!el) return;
+  observer = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && void more(), { rootMargin: "120px" });
+  observer.observe(el);
+});
+onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
   <div class="spot-cluster">
-    <div class="head">{{ count.toLocaleString() }} 个机位</div>
+    <div class="head">{{ t.spots(count) }}</div>
     <div class="grid">
       <button v-for="s in spots" :key="s.id" type="button" :title="s.title" @click="emit('pick', { id: s.id, shard: s.shard })">
         <img :src="s.small" alt="" loading="lazy" />
       </button>
     </div>
-    <div class="foot">
-      <span v-if="count > spots.length" class="more">另有 {{ (count - spots.length).toLocaleString() }} 个</span>
-      <button type="button" @click="emit('zoomIn')">放大查看</button>
-    </div>
+    <div v-if="spots.length < refs.length" ref="sentinel" class="foot">{{ spots.length }} / {{ refs.length }}</div>
   </div>
 </template>
 
 <style scoped>
 .spot-cluster {
   width: 252px;
+  padding-bottom: 8px;
   font-size: 13px;
 }
 .head {
@@ -66,25 +89,10 @@ watch(() => props.features, async (fs) => {
   outline: 2px solid var(--mapette-accent);
 }
 .foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 8px 8px 12px;
-}
-.more {
+  padding: 8px 12px 0;
   font-size: 12px;
   color: var(--mapette-muted);
   font-variant-numeric: tabular-nums;
-}
-.foot button {
-  margin-left: auto;
-  padding: 4px 10px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--mapette-fg);
-  background: var(--mapette-hover);
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
+  text-align: center;
 }
 </style>

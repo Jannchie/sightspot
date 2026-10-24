@@ -12,10 +12,10 @@ export const CLUSTER = { radius: 72, maxZoom: 11 };
 /** 换主题时原样保留的数据源（12 万个点，不要重新解析） */
 export const KEEP_SOURCES = ["spots", "cone", "focus"];
 
-export function spotStyle({ palette: c }: StyleContext) {
+export function spotStyle({ palette: c, locale }: StyleContext) {
   return createBasemap({
     palette: c,
-    locale: "zh-Hans",
+    locale,
     rail: RAIL,
     sources: {
       // 全部机位：maplibre 在 worker 里抓取、解析并按缩放聚合，主线程不碰这 12 万个点
