@@ -102,6 +102,14 @@ def main():
                     mirrored.add(r["pageid"])
 
     details = {}
+    # 一张照片可能同时在几个分类里（例如既是 QI 又是 WLM 入选作品）：以 members.jsonl 的全部记录为准
+    cats: dict[int, set[str]] = {}
+    for line in open(src / "members.jsonl", encoding="utf-8"):
+        if line.endswith("
+"):
+            m = json.loads(line)
+            cats.setdefault(m["pageid"], set()).add(m["cat"])
+
     for line in open(src / "spots.jsonl", encoding="utf-8"):
         s = json.loads(line)
         if s["exif_gps"] != "match" or s["mime"] not in ("image/jpeg", "image/png", "image/tiff", "image/webp"):
@@ -123,7 +131,9 @@ def main():
             "license": s["license"],
             "licenseUrl": s["license_url"],
             "taken": taken(s["taken"]),
-            "featured": "fp" in s["cats"],
+            "featured": "fp" in cats.get(i, set(s["cats"])),
+            # 摄影比赛入选（Wiki Loves Monuments 含国家赛提名，Wiki Loves Earth 为获奖）
+            "contest": "wlm" if "wlm" in cats.get(i, ()) else "wle" if "wle" in cats.get(i, ()) else None,
             "camera": camera(ex),
             "lens": text(ex.get("LensModel")),
             "focal": ratio(ex.get("FocalLength")),

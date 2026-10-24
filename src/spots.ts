@@ -21,6 +21,8 @@ export interface Spot {
   licenseUrl: string | null;
   taken: string | null;
   featured: boolean;
+  /** 摄影比赛：Wiki Loves Monuments（入选，含国家赛提名）、Wiki Loves Earth（获奖） */
+  contest: "wlm" | "wle" | null;
   camera: string | null;
   lens: string | null;
   focal: number | null;

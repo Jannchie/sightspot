@@ -151,7 +151,10 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           />
         </a>
         <h2>{{ focus.title }}</h2>
-        <p v-if="focus.featured" class="badge">{{ t.featured }}</p>
+        <p v-if="focus.featured || focus.contest" class="badges">
+          <span v-if="focus.featured" class="badge">{{ t.featured }}</span>
+          <span v-if="focus.contest" class="badge">{{ t.contest[focus.contest] }}</span>
+        </p>
 
         <dl class="facts">
           <div><dt>{{ t.position }}</dt><dd class="stat">{{ coords(focus) }}</dd></div>
@@ -400,9 +403,14 @@ h2 {
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 2px 0;
+}
 .badge {
   display: inline-block;
-  margin: 2px 2px 0;
   padding: 2px 8px;
   font-size: 11px;
   color: var(--mapette-accent);
