@@ -106,7 +106,7 @@ const themeLabel = computed(() => ({ auto: "外观：跟随系统", light: "外�
     :shortcuts="{ t: cycleTheme }"
     @escape="onEscape"
   >
-    <template #map><SpotLayers :focus="focus" @pick="pick" @view="onView" /></template>
+    <template #map><SpotLayers :focus="focus" @pick="pick" @view="onView" @close="pick(null)" /></template>
 
       <template #header>
       <div class="head">
