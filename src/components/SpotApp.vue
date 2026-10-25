@@ -9,6 +9,7 @@ import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
 import { fetchSpot, fetchSpots, loadSample, pickDesc, type SampleSpot, type Spot } from "../spots";
+import SightMark from "./SightMark.vue";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
 import "@mapette/core/mapette.css";
 
@@ -173,7 +174,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
     <template v-if="!focus" #header>
       <div class="head">
         <div class="brand">
-          <span class="mark"><JIcon :icon="ICONS.camera" /></span>
+          <span class="mark"><SightMark :size="30" /></span>
           <div>
             <h1>{{ t.brand }}</h1>
             <p class="muted stat">
@@ -328,15 +329,16 @@ a {
   align-items: center;
   gap: 10px;
 }
+/* 与 PWA 图标一样是白底上的主题色标志；暗色模式下底板跟着面板变暗 */
 .mark {
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
-  color: #fff;
-  background: var(--mapette-accent);
+  color: var(--mapette-accent);
+  background: light-dark(#fff, rgb(255 255 255 / 0.06));
   border-radius: 10px;
-  font-size: 18px;
+  box-shadow: 0 0 0 1px var(--mapette-line);
 }
 h1 {
   margin: 0;

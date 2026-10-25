@@ -2,7 +2,6 @@
 import type { Icon } from "@jannchie/icons";
 import {
   IconCalendar,
-  IconCamera,
   IconExternalLink,
   IconFocus,
   IconLocate,
@@ -17,7 +16,6 @@ import {
 
 export const ICONS = {
   close: IconX,
-  camera: IconCamera,
   date: IconCalendar,
   zoomIn: IconPlus,
   zoomOut: IconMinus,
