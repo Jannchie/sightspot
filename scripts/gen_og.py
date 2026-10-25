@@ -15,10 +15,10 @@ INK = (29, 29, 31)
 
 # 语言 → (标题, 副标题, 标题字体, 副标题字体)；每种语言用它自己的字形
 LOCALES = {
-    "zh-hans": ("摄影机位地图", "高质量照片的真实拍摄位置", "msyhbd.ttc", "msyh.ttc"),
-    "zh-hant": ("攝影機位地圖", "高品質照片的真實拍攝位置", "msjhbd.ttc", "msjh.ttc"),
-    "ja": ("撮影スポットマップ", "高品質な写真の実際の撮影位置", "YuGothB.ttc", "YuGothM.ttc"),
-    "en": ("Photo Spot Map", "Where great photos were actually taken", "segoeuib.ttf", "segoeui.ttf"),
+    "zh-hans": ("Sightspot", "摄影机位地图 · 高质量照片的真实拍摄位置", "segoeuib.ttf", "msyh.ttc"),
+    "zh-hant": ("Sightspot", "攝影機位地圖 · 高品質照片的真實拍攝位置", "segoeuib.ttf", "msjh.ttc"),
+    "ja": ("Sightspot", "撮影スポットマップ · 実際の撮影位置", "segoeuib.ttf", "YuGothM.ttc"),
+    "en": ("Sightspot", "Where great photos were actually taken", "segoeuib.ttf", "segoeui.ttf"),
 }
 
 

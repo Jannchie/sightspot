@@ -1,7 +1,7 @@
 {
   "id": "/ja",
-  "name": "撮影スポットマップ",
-  "short_name": "撮影スポット",
+  "name": "Sightspot",
+  "short_name": "Sightspot",
   "description": "高品質な写真の実際の撮影位置を、作例・焦点距離・向きとともに",
   "start_url": "/ja",
   "scope": "/",

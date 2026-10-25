@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "摄影机位地图",
-  "short_name": "摄影机位",
+  "name": "Sightspot",
+  "short_name": "Sightspot",
   "description": "高质量照片的真实拍摄位置，附样片、焦距与朝向",
   "start_url": "/",
   "scope": "/",

@@ -1,7 +1,7 @@
 {
   "id": "/en",
-  "name": "Photo Spot Map",
-  "short_name": "Photo Spots",
+  "name": "Sightspot",
+  "short_name": "Sightspot",
   "description": "Where great photos were actually taken, with the photo, focal length and direction",
   "start_url": "/en",
   "scope": "/",

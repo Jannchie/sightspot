@@ -1,7 +1,7 @@
 {
   "id": "/zh-hant",
-  "name": "攝影機位地圖",
-  "short_name": "攝影機位",
+  "name": "Sightspot",
+  "short_name": "Sightspot",
   "description": "高品質照片的真實拍攝位置，附樣片、焦距與朝向",
   "start_url": "/zh-hant",
   "scope": "/",

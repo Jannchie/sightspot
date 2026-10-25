@@ -5,11 +5,13 @@ import { inject, provide, type InjectionKey } from "vue";
 
 const MESSAGES = {
   "zh-Hans": {
-    appName: "摄影机位",
+    appName: "Sightspot",
     collections: { fp: "特色图片", qi: "优质图片", vi: "有价值图片", wlm: "WLM 古迹", wle: "WLE 自然" },
     collectionsLabel: "精选集",
     collectionCount: (n: number) => `${n.toLocaleString("zh-Hans")} 个机位`,
-    brand: "摄影机位地图",
+    brand: "Sightspot",
+    /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
+    tagline: "摄影机位地图",
     description: "在地图上查找真实的拍摄位置：样片、坐标、焦距与朝向，来自 Wikimedia Commons 的高质量照片。",
     count: (n: number) => `${n.toLocaleString("zh-Hans")} 个真实拍摄点`,
     loading: "加载中…",
@@ -37,11 +39,13 @@ const MESSAGES = {
     kbBack: "返回",
   },
   "zh-Hant": {
-    appName: "攝影機位",
+    appName: "Sightspot",
     collections: { fp: "精選圖片", qi: "優質圖片", vi: "有價值圖片", wlm: "WLM 古蹟", wle: "WLE 自然" },
     collectionsLabel: "精選集",
     collectionCount: (n: number) => `${n.toLocaleString("zh-Hant")} 個機位`,
-    brand: "攝影機位地圖",
+    brand: "Sightspot",
+    /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
+    tagline: "攝影機位地圖",
     description: "在地圖上查找真實的拍攝位置：樣片、座標、焦距與朝向，來自 Wikimedia Commons 的高品質照片。",
     count: (n: number) => `${n.toLocaleString("zh-Hant")} 個真實拍攝點`,
     loading: "載入中…",
@@ -69,11 +73,13 @@ const MESSAGES = {
     kbBack: "返回",
   },
   ja: {
-    appName: "撮影スポット",
+    appName: "Sightspot",
     collections: { fp: "秀逸", qi: "高品質", vi: "有用", wlm: "WLM 文化財", wle: "WLE 自然" },
     collectionsLabel: "コレクション",
     collectionCount: (n: number) => `${n.toLocaleString("ja")} か所`,
-    brand: "撮影スポットマップ",
+    brand: "Sightspot",
+    /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
+    tagline: "撮影スポットマップ",
     description: "実際の撮影位置を地図で探す：作例、座標、焦点距離と向き。Wikimedia Commons の高品質な写真から。",
     count: (n: number) => `撮影地点 ${n.toLocaleString("ja")} か所`,
     loading: "読み込み中…",
@@ -101,11 +107,13 @@ const MESSAGES = {
     kbBack: "戻る",
   },
   en: {
-    appName: "Photo Spots",
+    appName: "Sightspot",
     collections: { fp: "Featured", qi: "Quality", vi: "Valued", wlm: "WLM monuments", wle: "WLE nature" },
     collectionsLabel: "Collections",
     collectionCount: (n: number) => `${n.toLocaleString("en")} spots`,
-    brand: "Photo Spot Map",
+    brand: "Sightspot",
+    /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
+    tagline: "Photo spot map",
     description: "Find real camera positions on the map: sample photos, coordinates, focal length and direction, from high-quality Wikimedia Commons photos.",
     count: (n: number) => `${n.toLocaleString("en")} real camera spots`,
     loading: "Loading…",

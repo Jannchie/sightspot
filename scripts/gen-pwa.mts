@@ -9,10 +9,10 @@ export const SITE = "https://spot.jannchie.com";
 const OUT = fileURLToPath(new URL("../public/", import.meta.url));
 
 const TEXT: Record<Locale, { name: string; short: string; description: string }> = {
-  "zh-Hans": { name: "摄影机位地图", short: "摄影机位", description: "高质量照片的真实拍摄位置，附样片、焦距与朝向" },
-  "zh-Hant": { name: "攝影機位地圖", short: "攝影機位", description: "高品質照片的真實拍攝位置，附樣片、焦距與朝向" },
-  ja: { name: "撮影スポットマップ", short: "撮影スポット", description: "高品質な写真の実際の撮影位置を、作例・焦点距離・向きとともに" },
-  en: { name: "Photo Spot Map", short: "Photo Spots", description: "Where great photos were actually taken, with the photo, focal length and direction" },
+  "zh-Hans": { name: "Sightspot", short: "Sightspot", description: "高质量照片的真实拍摄位置，附样片、焦距与朝向" },
+  "zh-Hant": { name: "Sightspot", short: "Sightspot", description: "高品質照片的真實拍攝位置，附樣片、焦距與朝向" },
+  ja: { name: "Sightspot", short: "Sightspot", description: "高品質な写真の実際の撮影位置を、作例・焦点距離・向きとともに" },
+  en: { name: "Sightspot", short: "Sightspot", description: "Where great photos were actually taken, with the photo, focal length and direction" },
 };
 
 const ICONS = [

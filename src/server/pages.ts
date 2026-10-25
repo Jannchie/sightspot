@@ -25,7 +25,7 @@ export const homePageHead = defineHead<InferProps<typeof homeLoader>>((_c, { lan
     site: SITE,
     locale: lang,
     path: "/",
-    title: t.brand,
+    title: `${t.brand} · ${t.tagline}`,
     description: t.description,
     siteName: t.brand,
     image: `${SITE}/icons/og-${lang.toLowerCase()}.png`,
