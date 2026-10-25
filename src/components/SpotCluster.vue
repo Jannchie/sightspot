@@ -60,11 +60,11 @@ onBeforeUnmount(() => observer?.disconnect());
   padding-bottom: 8px;
   font-size: 13px;
 }
-/* 吸顶：照片多时卡片在 mapette 的 .mapette-popover-body 里滚动，数量一直看得到 */
+/* 吸顶：照片多时卡片在 mapette 的 .mapette-popover-body 里滚动，数量一直看得到。
+   不设 z-index：定位元素本来就画在缩略图上面，设了反而会盖住卡片右上角的关闭按钮 */
 .head {
   position: sticky;
   top: 0;
-  z-index: 1;
   padding: 10px 40px 8px 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
