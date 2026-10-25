@@ -36,7 +36,7 @@ export const PRIVACY: Record<Locale, { title: string; intro: string; items: [str
     items: [
       ["位置情報", "現在地ボタンを押して許可した場合のみ、端末上で地図に現在地を表示するために使います。どこにも送信しません。"],
       ["端末に保存する設定", "ウェブサイトは外観の設定をブラウザ内に保存し、オフラインで開けるようページをキャッシュします。いずれも端末内にのみ保存されます。"],
-      ["通信", "地図と撮影地点を表示するため、spot.jannchie.com・cdn.jannchie.com からデータと写真を、一部の写真は提供元（Wikimedia、iNaturalist の AWS ストレージ）から直接、tiles.openfreemap.org から地図タイルを、AWS から地形データを取得します。通常の Web 通信と同様に、これらのサーバーは接続に伴って IP アドレスと端末の種類を受け取ります。それ以外の情報は送信せず、これらの記録で利用者を特定することもありません。"],
+      ["通信", "地図と撮影地点を表示するため、spot.jannchie.com・cdn.jannchie.com からデータと写真を（一部の写真は提供元の Wikimedia や iNaturalist の AWS ストレージから直接）、tiles.openfreemap.org から地図タイルを、AWS から地形データを取得します。通常の Web 通信と同様に、これらのサーバーは接続に伴って IP アドレスと端末の種類を受け取ります。それ以外の情報は送信せず、これらの記録で利用者を特定することもありません。"],
       ["外部リンク", "Wikimedia Commons、Geograph、iNaturalist、ライセンス、マップ、GitHub などへのリンクは他のサイトやアプリで開き、それぞれのプライバシーポリシーが適用されます。"],
     ],
     contact: "お問い合わせ",
