@@ -6,13 +6,22 @@
   public/data/d/{s}.json      机位详情（含站点四种语言的描述，没有时留原文）。按空间四叉树分片（每片最多 SHARD_MAX 个），
                               视野里的机位多半落在同一两片里，浏览一片区域只需加载几个小文件
 
-  python -I -X utf8 scripts/export_demo.py --src <commons_spots/out>
+  python -I -X utf8 scripts/export_demo.py --src <commons_spots/out> [--upload] [--deploy]
+
+数据不进仓库（体积大、每次导出整体变化）。CI 部署时从 R2 下载打包好的数据（.github/workflows/deploy.yml）：
+  --upload  导出后把 public/data 打成 tar.gz 传到 R2（{DATA_URL}），需要环境变量 CLOUDFLARE_API_TOKEN（R2 编辑权限）
+  --deploy  上传后触发 GitHub 上的部署（gh workflow run），需要已登录的 gh
 描述来自 spots.jsonl 的 description，早期抓的照片没有这个字段，用 commons_spots.py --descriptions 补到 descriptions.jsonl。
 """
 
 import argparse
+import io
 import json
+import os
 import re
+import subprocess
+import tarfile
+import urllib.request
 from pathlib import Path
 
 SHARD_MAX = 200
@@ -26,6 +35,12 @@ DESC_LANGS = {"zh": "zh-Hans", "zh-hans": "zh-Hans", "zh-cn": "zh-Hans", "zh-sg"
 BOILERPLATE = re.compile(r"This is a (?:photo|image) of (?:a |an )?[^.:]*?(?:monument|heritage|protected area|listed building|natural)[^:]*?"
                          r"(?:number|ID|id|identified by)\s*:?\s*[\w./()\-]*\.?", re.I)
 CDN = "https://cdn.jannchie.com/photo-spots/commons/"
+# 打包好的数据：R2 的 public-assets 存储桶，经 cdn.jannchie.com 公开（CI 下载时带上查询参数绕过 CDN 缓存）
+R2_ACCOUNT = "ad02684d0205554549c21cd8bfc41d48"
+R2_BUCKET = "public-assets"
+DATA_KEY = "photo-spots/data/data.tar.gz"
+DATA_URL = f"https://cdn.jannchie.com/{DATA_KEY}"
+REPO = "Jannchie/sightspot"
 # 精选集 → 地图点属性 c 的位，前端按位筛选（src/collections.ts 里同样的顺序）
 COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16}
 ROOT = Path(__file__).resolve().parent.parent
@@ -120,9 +135,30 @@ def quadtree(items, x0=-180.0, y0=-90.0, x1=180.0, y1=90.0, path="q"):
     return out
 
 
+def upload(data: Path):
+    """public/data 打成 tar.gz（包内路径以 data/ 开头），PUT 到 R2"""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz", compresslevel=9) as tar:
+        tar.add(data, arcname="data")
+    body = buf.getvalue()
+    token = os.environ.get("CLOUDFLARE_API_TOKEN")
+    if not token:
+        raise SystemExit("需要环境变量 CLOUDFLARE_API_TOKEN（R2 编辑权限）")
+    req = urllib.request.Request(
+        f"https://api.cloudflare.com/client/v4/accounts/{R2_ACCOUNT}/r2/buckets/{R2_BUCKET}/objects/{DATA_KEY}",
+        data=body, method="PUT",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/gzip", "Cache-Control": "no-cache"})
+    with urllib.request.urlopen(req, timeout=600) as r:
+        if not 200 <= r.status < 300:
+            raise SystemExit(f"上传失败：HTTP {r.status}")
+    print(f"uploaded {len(body) / 2**20:.1f} MiB -> {DATA_URL}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="commons_spots 的 out 目录")
+    ap.add_argument("--upload", action="store_true", help="导出后打包上传到 R2，供 CI 部署时下载")
+    ap.add_argument("--deploy", action="store_true", help="上传后触发 GitHub 上的部署（隐含 --upload）")
     a = ap.parse_args()
     src = Path(a.src)
 
@@ -222,6 +258,12 @@ def main():
                                               encoding="utf-8")
     print(f"{len(features):,} spots ({sum(1 for f in features if f['properties']['i'] in mirrored):,} mirrored) "
           f"-> {data / 'spots.geojson'} ({(data / 'spots.geojson').stat().st_size / 2**20:.1f} MiB), {len(shards)} shards")
+
+    if a.upload or a.deploy:
+        upload(data)
+    if a.deploy:
+        subprocess.run(["gh", "workflow", "run", "deploy.yml", "-R", REPO], check=True)
+        print(f"deploy triggered: https://github.com/{REPO}/actions")
 
 
 if __name__ == "__main__":
