@@ -247,6 +247,11 @@ body {
   background: var(--mapette-bg-solid);
   color: var(--mapette-fg);
 }
+/* 主题色：mapette 默认是茜红，这里换成蓝色（暗色模式用提亮的同色系）。:root:root 保证盖过 mapette.css 的 :root */
+:root:root {
+  --mapette-accent-light: #3567a8;
+  --mapette-accent-dark: #6b97d6;
+}
 :root {
   font-family: -apple-system, system-ui, "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
 }

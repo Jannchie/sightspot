@@ -1,4 +1,4 @@
-// PWA 图标与网站小图标：茜色底板上的白色相机（与页面左上角的标志相同，图形来自 @jannchie/icons 的 camera）。
+// PWA 图标与网站小图标：主题色底板上的白色相机（与页面左上角的标志相同，图形来自 @jannchie/icons 的 camera）。
 // 改了设计后重跑，再跑 gen_og.py 合成社交分享图：
 //   node --experimental-strip-types scripts/gen-icons.mts && python scripts/gen_og.py
 import { mkdirSync } from "node:fs";
@@ -8,8 +8,8 @@ import sharp from "sharp";
 const OUT = fileURLToPath(new URL("../public/icons/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
 
-// 与 mapette 的 --mapette-accent 亮色一致
-const TILE = "#d2405a";
+// 与站点的主题色（SpotApp.vue 里 --mapette-accent-light）一致
+const TILE = "#3567a8";
 const CAMERA =
   "M4.5 7.5H7.17a2 2 0 0 0 1.42-.59l.82-.82a2 2 0 0 1 1.42-.59h2.34a2 2 0 0 1 1.42.59l.82.82a2 2 0 0 0 1.42.59H19.5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm4 5.75a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0";
 
