@@ -248,7 +248,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           © {{ focus.artist ?? t.anonymous }} ·
           <a v-if="focus.licenseUrl" :href="focus.licenseUrl" target="_blank" rel="noopener">{{ focus.license }}</a>
           <template v-else>{{ focus.license }}</template>
-          · <a :href="focus.page" target="_blank" rel="noopener">Wikimedia Commons <JIcon :icon="ICONS.external" /></a>
+          · <a :href="focus.page" target="_blank" rel="noopener">Wikimedia Commons <JIcon class="ext" :icon="ICONS.external" :size="11" /></a>
         </p>
       </article>
 
@@ -479,11 +479,18 @@ h1 {
 }
 
 /* ---- 详情 ---- */
+/* 「返回 / ×」吸在面板顶部：铺满面板宽度（抵消 .body 的内边距），毛玻璃底，内容从下面滚过时被模糊 */
 .detail-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin: -12px -12px 8px;
+  padding: 8px 12px;
+  background: var(--mapette-bg);
+  backdrop-filter: var(--mapette-glass);
 }
 .photo {
   display: block;
@@ -610,5 +617,10 @@ h2 {
   font-size: 12px;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+/* 外链小箭头：比文字小一号，贴着文字的中线 */
+.credit .ext {
+  vertical-align: -1px;
+  opacity: 0.7;
 }
 </style>
