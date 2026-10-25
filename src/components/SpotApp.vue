@@ -183,7 +183,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           class="chip"
           :class="{ on: collections.includes(k) }"
           :aria-pressed="collections.includes(k)"
-          :title="meta?.collections ? t.collectionCount(meta.collections[k]) : undefined"
+          :title="meta?.collections ? `${t.collectionNames[k]} · ${t.collectionCount(meta.collections[k])}` : t.collectionNames[k]"
           @click="toggleCollection(k)"
         >
           {{ t.collections[k] }}
@@ -340,11 +340,13 @@ h1 {
 .body {
   padding: 12px;
 }
+/* 一行排开；窄屏放不下时横向滑动，不换行 */
 .filters {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
   padding: 0 14px 12px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .filters .chip {
   flex: none;
