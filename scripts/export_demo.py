@@ -1,7 +1,7 @@
 """把 Commons 抓取结果（commons_spots.py 的 spots.jsonl、mirror.py 的 mirror.jsonl）导出成前端静态数据。
 
 只收真实拍摄点：EXIF GPS 与页面坐标一致的照片。
-  public/data/spots.geojson   全部机位的坐标（地图热力图与点），属性 i = Commons pageid，s = 详情分片
+  public/data/spots.geojson   全部机位的坐标（地图热力图与点），属性 i = Commons pageid，s = 详情分片，c = 所属精选集（位掩码）
   public/data/d/{s}.json      机位详情（含站点四种语言的描述，没有时留原文）。按空间四叉树分片（每片最多 SHARD_MAX 个），
                               视野里的机位多半落在同一两片里，浏览一片区域只需加载几个小文件
 
@@ -24,6 +24,8 @@ DESC_LANGS = {"zh": "zh-Hans", "zh-hans": "zh-Hans", "zh-cn": "zh-Hans", "zh-sg"
 BOILERPLATE = re.compile(r"This is a (?:photo|image) of (?:a |an )?[^.:]*?(?:monument|heritage|protected area|listed building|natural)[^:]*?"
                          r"(?:number|ID|id|identified by)\s*:?\s*[\w./()\-]*\.?", re.I)
 CDN = "https://cdn.jannchie.com/photo-spots/commons/"
+# 精选集 → 地图点属性 c 的位，前端按位筛选（src/collections.ts 里同样的顺序）
+COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16}
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -179,12 +181,14 @@ def main():
             "exposure": exposure(ex.get("ExposureTime")),
             "iso": ex.get("ISOSpeedRatings") if isinstance(ex.get("ISOSpeedRatings"), (int, float)) else None,
             "heading": round(heading % 360) if heading is not None else None,
+            "_cats": cats.get(i, set()) | set(s["cats"]),
         }
 
     shards = quadtree([(d["lng"], d["lat"], i) for i, d in details.items()])
     shard_of = {i: k for k, ids in shards.items() for i in ids}
     features = [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [round(d["lng"], 6), round(d["lat"], 6)]},
-                 "properties": {"i": i, "s": shard_of[i]}} for i, d in details.items()]
+                 "properties": {"i": i, "s": shard_of[i], "c": sum(COLLECTIONS[c] for c in d.pop("_cats"))}}
+                for i, d in details.items()]
 
     data = ROOT / "public" / "data"
     if (data / "d").exists():
@@ -197,6 +201,7 @@ def main():
         "count": len(details), "mirrored": sum(1 for d in details.values() if d["mirrored"]),
         "withHeading": sum(1 for d in details.values() if d["heading"] is not None),
         "withDesc": sum(1 for d in details.values() if d["desc"]),
+        "collections": {k: sum(1 for f in features if f["properties"]["c"] & bit) for k, bit in COLLECTIONS.items()},
     }), encoding="utf-8")
     for k, ids in shards.items():
         (data / "d" / f"{k}.json").write_text(json.dumps({i: details[i] for i in ids}, ensure_ascii=False, separators=(",", ":")),

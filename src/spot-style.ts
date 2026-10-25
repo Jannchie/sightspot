@@ -12,6 +12,8 @@ export const CLUSTER = { radius: 72, maxZoom: 11 };
 /** 换主题时原样保留的数据源（12 万个点，不要重新解析） */
 export const KEEP_SOURCES = ["spots", "cone", "focus"];
 
+export const SPOTS_URL = "/data/spots.geojson";
+
 export function spotStyle({ palette: c, locale }: StyleContext) {
   return createBasemap({
     palette: c,
@@ -19,7 +21,7 @@ export function spotStyle({ palette: c, locale }: StyleContext) {
     rail: RAIL,
     sources: {
       // 全部机位：maplibre 在 worker 里抓取、解析并按缩放聚合，主线程不碰这 12 万个点
-      spots: clusterSource("/data/spots.geojson", CLUSTER),
+      spots: clusterSource(SPOTS_URL, CLUSTER),
       // 选中机位的取景扇形（有朝向时）与选中的点：单独放，被聚合进气泡时也看得到
       cone: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
       focus: { type: "geojson", data: { type: "FeatureCollection", features: [] } },

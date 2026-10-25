@@ -4,6 +4,7 @@ import { JIcon } from "@jannchie/icons-vue";
 import { baseShortcuts, directions, fieldOfView, switchLocaleUrl, type Locale, type SheetSnap } from "@mapette/core";
 import { MapExplorer, MapFooter, useThemePref } from "@mapette/vue";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { COLLECTION_KEYS, parseCollections, type Collection } from "../collections";
 import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
@@ -23,6 +24,7 @@ interface Meta {
   mirrored: number;
   withHeading: number;
   withDesc?: number;
+  collections?: Record<Collection, number>;
 }
 const meta = ref<Meta | null>(null);
 
@@ -63,19 +65,22 @@ async function onView(refs: SpotRef[] | null) {
   if (seq === viewSeq) inView.value = spots;
 }
 
+// ---- 精选集筛选（多选，全不选为全部），写进 ?c=fp,wlm ----
+const collections = ref<Collection[]>([]);
+function toggleCollection(k: Collection) {
+  const on = new Set(collections.value);
+  if (!on.delete(k)) on.add(k);
+  collections.value = COLLECTION_KEYS.filter((x) => on.has(x));
+}
+watch(collections, (c) => {
+  const url = new URL(location.href);
+  if (c.length) url.searchParams.set("c", c.join(","));
+  else url.searchParams.delete("c");
+  history.replaceState(history.state, "", url);
+});
+
 // 手机端抽屉：收起 / 半屏 / 全屏（拖动与吸附由 mapette 处理），选中机位时打开到半屏
 const sheet = ref<SheetSnap>("half");
-
-const explorer = ref<InstanceType<typeof MapExplorer>>();
-const flyTo = (center: [number, number], zoom: number) => explorer.value?.controller?.map.flyTo({ center, zoom, duration: 1600 });
-const PLACES = [
-  { key: "kyoto", center: [135.775, 35.0] as [number, number], zoom: 13 },
-  { key: "paris", center: [2.335, 48.857] as [number, number], zoom: 13 },
-  { key: "berlin", center: [13.39, 52.515] as [number, number], zoom: 13 },
-  { key: "prague", center: [14.418, 50.087] as [number, number], zoom: 14 },
-  { key: "newYork", center: [-73.985, 40.75] as [number, number], zoom: 13 },
-  { key: "alps", center: [8.0, 46.55] as [number, number], zoom: 9.5 },
-] as const;
 
 // ---- 详情的展示字段 ----
 const f = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, ""));
@@ -98,7 +103,9 @@ const compass = (deg: number) => t.compass[Math.round(deg / 45) % 8];
 
 onMounted(() => {
   fetch("/data/meta.json").then((r) => r.json() as Promise<Meta>).then((m) => (meta.value = m), () => {});
-  const [id, shard] = (new URLSearchParams(location.search).get("spot") ?? "").split(".");
+  const query = new URLSearchParams(location.search);
+  collections.value = parseCollections(query.get("c"));
+  const [id, shard] = (query.get("spot") ?? "").split(".");
   if (Number(id) && shard) void pick({ id: Number(id), shard });
 });
 
@@ -119,14 +126,13 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
 
 <template>
   <MapExplorer
-    ref="explorer"
     v-model:snap="sheet"
     :map-style="spotStyle"
     :locale="locale"
     :keep-sources="KEEP_SOURCES"
     :shortcuts="shortcuts"
   >
-    <template #map><SpotLayers :focus="focus" @pick="pick" @view="onView" @close="pick(null)" /></template>
+    <template #map><SpotLayers :focus="focus" :collections="collections" @pick="pick" @view="onView" @close="pick(null)" /></template>
 
     <template #header>
       <div class="head">
@@ -141,9 +147,22 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           </div>
         </div>
       </div>
+      <div class="filters" role="group" :aria-label="t.collectionsLabel">
+        <button
+          v-for="k in COLLECTION_KEYS"
+          :key="k"
+          class="chip"
+          :class="{ on: collections.includes(k) }"
+          :aria-pressed="collections.includes(k)"
+          :title="meta?.collections ? t.collectionCount(meta.collections[k]) : undefined"
+          @click="toggleCollection(k)"
+        >
+          {{ t.collections[k] }}
+        </button>
+      </div>
     </template>
 
-    <div class="body">
+    <div v-if="focus || inView" class="body">
       <!-- 机位详情 -->
       <article v-if="focus" class="detail">
         <div class="detail-bar">
@@ -202,14 +221,6 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
             <img :src="s.small" alt="" loading="lazy" />
             <span>{{ s.title }}</span>
           </button>
-        </div>
-      </section>
-
-      <!-- 还没放大到能看到单个机位 -->
-      <section v-else class="intro">
-        <p>{{ t.intro }}</p>
-        <div class="places">
-          <button v-for="p in PLACES" :key="p.key" class="chip" @click="flyTo(p.center, p.zoom)">{{ t.places[p.key] }}</button>
         </div>
       </section>
     </div>
@@ -279,6 +290,22 @@ h1 {
 .body {
   padding: 12px;
 }
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 12px 16px;
+}
+.filters .chip {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.chip.on,
+.chip.on:hover {
+  color: #fff;
+  background: var(--mapette-accent);
+}
 .muted {
   color: var(--mapette-muted);
 }
@@ -314,18 +341,6 @@ h1 {
   cursor: pointer;
 }
 
-/* ---- 首页 ---- */
-.intro p {
-  margin: 4px 4px 14px;
-  font-size: 14px;
-  line-height: 1.65;
-}
-.places {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 4px;
-}
 .chip {
   padding: 6px 12px;
   font: inherit;

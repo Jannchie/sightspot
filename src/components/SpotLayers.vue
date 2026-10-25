@@ -5,6 +5,8 @@ import { fieldOfView, viewCone } from "@mapette/core";
 import { ClusterPopover, MapPopover, PhotoPins, useMap, useViewportFeatures } from "@mapette/vue";
 import type { GeoJSONSource, MapGeoJSONFeature } from "maplibre-gl";
 import { computed, watch } from "vue";
+import { setSourceFilter, type Collection } from "../collections";
+import { SPOTS_URL } from "../spot-style";
 import { fetchSpots, type Spot } from "../spots";
 import SpotCluster from "./SpotCluster.vue";
 
@@ -13,7 +15,11 @@ export interface SpotRef {
   shard: string;
 }
 
-const props = defineProps<{ focus: Spot | null }>();
+const props = defineProps<{
+  focus: Spot | null;
+  /** 只显示这些精选集里的机位；空数组为全部 */
+  collections: Collection[];
+}>();
 
 const emit = defineEmits<{
   pick: [ref: SpotRef];
@@ -40,7 +46,11 @@ watch(controller, (ctrl) => {
     Object.assign(window, { __map: m }); // 调试用
     m.on("error", (e) => console.error("[map]", e.error));
   }
-  ctrl.onStyleLoad(syncFocus); // 首次加载与换主题后重新应用选中状态
+  // 首次加载与换主题后重新应用选中状态与筛选
+  ctrl.onStyleLoad(() => {
+    syncFocus();
+    syncFilter();
+  });
   m.on("click", "point", (e) => {
     const f = e.features?.[0];
     if (f) pick(toRef(f));
@@ -62,6 +72,12 @@ function syncFocus() {
     features: spot?.heading != null ? [viewCone(spot.lng, spot.lat, spot.heading, fieldOfView(spot.focal35))] : [],
   });
 }
+function syncFilter() {
+  const m = controller.value?.map;
+  if (m?.getSource("spots")) setSourceFilter(m, "spots", SPOTS_URL, props.collections);
+}
+watch(() => props.collections, syncFilter);
+
 // 从列表或链接选中：看不到就平移过去，不改缩放
 watch(() => props.focus, (spot) => {
   syncFocus();
