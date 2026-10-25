@@ -3,7 +3,7 @@
 import { markShapes } from "../logo";
 
 withDefaults(defineProps<{ size?: number }>(), { size: 34 });
-const shapes = markShapes({ color: "currentColor", id: "sightspot-mark" });
+const shapes = markShapes({ color: "currentColor" });
 </script>
 
 <template>
