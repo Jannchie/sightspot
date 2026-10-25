@@ -2,6 +2,7 @@
 import { localeFromSegment, seoHead, type Locale } from "@mapette/core";
 import { defineHandler, defineHead, type InferProps } from "void";
 import { messagesFor } from "../i18n";
+import { PRIVACY } from "../privacy";
 
 const SITE = "https://spot.jannchie.com";
 
@@ -34,5 +35,21 @@ export const homePageHead = defineHead<InferProps<typeof homeLoader>>((_c, { lan
     // 各语言各自的 PWA 清单（应用名、启动页），scripts/gen-pwa.mts 生成
     link: [{ rel: "manifest", href: `/manifest-${lang.toLowerCase()}.webmanifest` }],
     jsonLd: { "@context": "https://schema.org", "@type": "WebSite", name: t.brand, url: SITE, inLanguage: lang },
+  });
+});
+
+/** 隐私政策页（网站与 iOS App 共用，App Store 的隐私政策链接指向这里） */
+export const privacyLoader = homeLoader;
+
+export const privacyPageHead = defineHead<InferProps<typeof privacyLoader>>((_c, { lang }) => {
+  const t = messagesFor(lang);
+  return seoHead({
+    site: SITE,
+    locale: lang,
+    path: "/privacy",
+    title: `${PRIVACY[lang].title} · ${t.brand}`,
+    description: PRIVACY[lang].intro,
+    siteName: t.brand,
+    image: `${SITE}/icons/og-${lang.toLowerCase()}.png`,
   });
 });
