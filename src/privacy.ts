@@ -12,8 +12,8 @@ export const PRIVACY: Record<Locale, { title: string; intro: string; items: [str
     items: [
       ["位置", "只有在你点定位按钮并允许访问后，才会在你的设备上用位置在地图上显示你在哪里，不会发送到任何地方。"],
       ["设备上保存的设置", "网站在浏览器本地保存外观偏好，并缓存页面以便离线打开；这些只存在你的设备上。"],
-      ["网络请求", "为显示地图和机位，会从 spot.jannchie.com、cdn.jannchie.com 获取数据与照片，从 tiles.openfreemap.org 获取底图，从 AWS 获取地形。与任何网页请求一样，这些服务器会在连接中获知你的 IP 地址和设备类型；我们不发送其他信息，也不会用这些日志识别你。"],
-      ["外部链接", "Wikimedia Commons、许可协议、地图或 GitHub 等链接会打开其他网站或 App，适用它们各自的隐私政策。"],
+      ["网络请求", "为显示地图和机位，会从 spot.jannchie.com、cdn.jannchie.com 获取数据与照片，部分照片直接从来源网站获取（Wikimedia、iNaturalist 的 AWS 存储），从 tiles.openfreemap.org 获取底图，从 AWS 获取地形。与任何网页请求一样，这些服务器会在连接中获知你的 IP 地址和设备类型；我们不发送其他信息，也不会用这些日志识别你。"],
+      ["外部链接", "Wikimedia Commons、Geograph、iNaturalist、许可协议、地图或 GitHub 等链接会打开其他网站或 App，适用它们各自的隐私政策。"],
     ],
     contact: "问题反馈",
     updated: "更新于",
@@ -24,8 +24,8 @@ export const PRIVACY: Record<Locale, { title: string; intro: string; items: [str
     items: [
       ["位置", "只有在你點定位按鈕並允許存取後，才會在你的裝置上用位置在地圖上顯示你在哪裡，不會傳送到任何地方。"],
       ["裝置上儲存的設定", "網站在瀏覽器本機儲存外觀偏好，並快取頁面以便離線開啟；這些只存在你的裝置上。"],
-      ["網路請求", "為顯示地圖和機位，會從 spot.jannchie.com、cdn.jannchie.com 取得資料與照片，從 tiles.openfreemap.org 取得底圖，從 AWS 取得地形。與任何網頁請求一樣，這些伺服器會在連線中得知你的 IP 位址和裝置類型；我們不傳送其他資訊，也不會用這些記錄識別你。"],
-      ["外部連結", "Wikimedia Commons、授權條款、地圖或 GitHub 等連結會開啟其他網站或 App，適用它們各自的隱私政策。"],
+      ["網路請求", "為顯示地圖和機位，會從 spot.jannchie.com、cdn.jannchie.com 取得資料與照片，部分照片直接從來源網站取得（Wikimedia、iNaturalist 的 AWS 儲存），從 tiles.openfreemap.org 取得底圖，從 AWS 取得地形。與任何網頁請求一樣，這些伺服器會在連線中得知你的 IP 位址和裝置類型；我們不傳送其他資訊，也不會用這些記錄識別你。"],
+      ["外部連結", "Wikimedia Commons、Geograph、iNaturalist、授權條款、地圖或 GitHub 等連結會開啟其他網站或 App，適用它們各自的隱私政策。"],
     ],
     contact: "問題回報",
     updated: "更新於",
@@ -36,8 +36,8 @@ export const PRIVACY: Record<Locale, { title: string; intro: string; items: [str
     items: [
       ["位置情報", "現在地ボタンを押して許可した場合のみ、端末上で地図に現在地を表示するために使います。どこにも送信しません。"],
       ["端末に保存する設定", "ウェブサイトは外観の設定をブラウザ内に保存し、オフラインで開けるようページをキャッシュします。いずれも端末内にのみ保存されます。"],
-      ["通信", "地図と撮影地点を表示するため、spot.jannchie.com・cdn.jannchie.com からデータと写真を、tiles.openfreemap.org から地図タイルを、AWS から地形データを取得します。通常の Web 通信と同様に、これらのサーバーは接続に伴って IP アドレスと端末の種類を受け取ります。それ以外の情報は送信せず、これらの記録で利用者を特定することもありません。"],
-      ["外部リンク", "Wikimedia Commons、ライセンス、マップ、GitHub などへのリンクは他のサイトやアプリで開き、それぞれのプライバシーポリシーが適用されます。"],
+      ["通信", "地図と撮影地点を表示するため、spot.jannchie.com・cdn.jannchie.com からデータと写真を、一部の写真は提供元（Wikimedia、iNaturalist の AWS ストレージ）から直接、tiles.openfreemap.org から地図タイルを、AWS から地形データを取得します。通常の Web 通信と同様に、これらのサーバーは接続に伴って IP アドレスと端末の種類を受け取ります。それ以外の情報は送信せず、これらの記録で利用者を特定することもありません。"],
+      ["外部リンク", "Wikimedia Commons、Geograph、iNaturalist、ライセンス、マップ、GitHub などへのリンクは他のサイトやアプリで開き、それぞれのプライバシーポリシーが適用されます。"],
     ],
     contact: "お問い合わせ",
     updated: "更新日",
@@ -48,8 +48,8 @@ export const PRIVACY: Record<Locale, { title: string; intro: string; items: [str
     items: [
       ["Location", "Only if you tap the locate button and allow access, your location is used on your device to show where you are on the map. It is never sent anywhere."],
       ["Settings on your device", "The website keeps your appearance setting in your browser, and caches pages so they open offline. These stay on your device."],
-      ["Network requests", "To show the map and spots, data and photos are loaded from spot.jannchie.com and cdn.jannchie.com, map tiles from tiles.openfreemap.org, and terrain from AWS. Like any web request, these servers receive your IP address and device type as part of the connection; nothing else is sent, and we do not use these logs to identify you."],
-      ["External links", "Links to Wikimedia Commons, licenses, Maps or GitHub open other websites or apps, which have their own privacy policies."],
+      ["Network requests", "To show the map and spots, data and photos are loaded from spot.jannchie.com and cdn.jannchie.com (some photos directly from their sources: Wikimedia and iNaturalist's AWS storage), map tiles from tiles.openfreemap.org, and terrain from AWS. Like any web request, these servers receive your IP address and device type as part of the connection; nothing else is sent, and we do not use these logs to identify you."],
+      ["External links", "Links to Wikimedia Commons, Geograph, iNaturalist, licenses, Maps or GitHub open other websites or apps, which have their own privacy policies."],
     ],
     contact: "Questions",
     updated: "Last updated",
