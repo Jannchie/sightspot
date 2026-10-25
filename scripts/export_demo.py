@@ -6,7 +6,10 @@
   public/data/d/{s}.json      机位详情（含站点四种语言的描述，没有时留原文）。按空间四叉树分片（每片最多 SHARD_MAX 个），
                               视野里的机位多半落在同一两片里，浏览一片区域只需加载几个小文件
 
-  python -I -X utf8 scripts/export_demo.py --src <commons_spots/out> [--upload] [--deploy]
+  python -I -X utf8 scripts/export_demo.py --src <commons_spots/out> [--extra out/inat.jsonl ...] [--upload] [--deploy]
+
+--extra 是其他来源（scripts/sources/）抓下来的 jsonl，与 Commons 合并。它们的编号加上来源的偏移
+（SOURCES），与 Commons 的 pageid 不重叠；精选集位掩码里每个来源占一位，前端当作精选集一起筛选。
 
 数据不进仓库（体积大、每次导出整体变化）。CI 部署时从 R2 下载打包好的数据（.github/workflows/deploy.yml）：
   --upload  导出后把 public/data 打成 tar.gz 传到 R2（{DATA_URL}），需要环境变量 CLOUDFLARE_API_TOKEN（R2 编辑权限）
@@ -42,7 +45,12 @@ DATA_KEY = "photo-spots/data/data.tar.gz"
 DATA_URL = f"https://cdn.jannchie.com/{DATA_KEY}"
 REPO = "Jannchie/sightspot"
 # 精选集 → 地图点属性 c 的位，前端按位筛选（src/collections.ts 里同样的顺序）
-COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16}
+COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16, "geograph": 32, "inat": 64}
+# 其他来源：地图上的编号 = 偏移 + 来源里的编号（Commons 的 pageid 在 1e9 以内）
+SOURCES = {"geograph": 1 * 10**12, "inat": 2 * 10**12}
+# 来源内质量分（score）的下限。Geograph 是展示廊投票的贝叶斯平均分（1–5）：≥ 4 约占前 10%，
+# 全收的话英国一带的点比全世界的 Commons 还密
+MIN_SCORE = {"geograph": 4.0}
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -159,6 +167,7 @@ def main():
     ap.add_argument("--src", required=True, help="commons_spots 的 out 目录")
     ap.add_argument("--upload", action="store_true", help="导出后打包上传到 R2，供 CI 部署时下载")
     ap.add_argument("--deploy", action="store_true", help="上传后触发 GitHub 上的部署（隐含 --upload）")
+    ap.add_argument("--extra", nargs="*", default=[], help="其他来源的 jsonl（scripts/sources/）")
     a = ap.parse_args()
     src = Path(a.src)
 
@@ -194,6 +203,7 @@ def main():
         heading = ratio(ex.get("GPSImgDirection"))
         name = title(s)
         details[i] = {
+            "src": "commons",
             "title": name,
             "desc": descriptions(s["description"] if "description" in s else desc.get(i), name),
             "page": s["page_url"],
@@ -221,6 +231,24 @@ def main():
             "heading": round(heading % 360) if heading is not None else None,
             "_cats": cats.get(i, set()) | set(s["cats"]),
         }
+
+    for path in a.extra:
+        n = 0
+        for line in open(path, encoding="utf-8"):
+            if not line.endswith("\n"):
+                continue
+            r = json.loads(line)
+            if r["score"] < MIN_SCORE.get(r["src"], 0):
+                continue
+            i = SOURCES[r["src"]] + int(r["id"])
+            details[i] = {"src": r["src"], **{k: r[k] for k in (
+                "title", "desc", "page", "lng", "lat", "w", "h", "small", "large")},
+                "mirrored": False, **{k: r[k] for k in ("artist", "license", "licenseUrl", "taken")},
+                "featured": False, "contest": None,
+                **{k: r[k] for k in ("camera", "lens", "focal", "focal35", "fnumber", "exposure", "iso", "heading")},
+                "_cats": {r["src"]}}
+            n += 1
+        print(f"{path}: {n:,} photos")
 
     shards = quadtree([(d["lng"], d["lat"], i) for i, d in details.items()])
     shard_of = {i: k for k, ids in shards.items() for i in ids}

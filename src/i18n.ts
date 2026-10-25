@@ -1,5 +1,5 @@
 // 界面语言：简体、繁体、日语、英语，路径前缀与 junrei 相同（见 @mapette/core 的 locale）。
-// 机位的标题来自 Commons（多为英文或拍摄地的语言），不翻译；这里只有界面文字。
+// 机位的标题来自各个来源（多为英文或拍摄地的语言），不翻译；这里只有界面文字。
 import { type Locale } from "@mapette/core";
 import { inject, provide, type InjectionKey } from "vue";
 
@@ -9,14 +9,14 @@ const MESSAGES = {
     shuffle: "换一批",
     appName: "Sightspot",
     // 按钮上的短名（一行放得下），完整名称在悬停提示里
-    collections: { fp: "特色", qi: "优质", vi: "有价值", wlm: "WLM", wle: "WLE" },
-    collectionNames: { fp: "Commons 特色图片", qi: "Commons 优质图片", vi: "Commons 有价值图片", wlm: "Wiki Loves Monuments 古迹摄影赛", wle: "Wiki Loves Earth 自然摄影赛" },
+    collections: { fp: "特色", qi: "优质", vi: "有价值", wlm: "WLM", wle: "WLE", geograph: "Geograph", inat: "iNat" },
+    collectionNames: { fp: "Commons 特色图片", qi: "Commons 优质图片", vi: "Commons 有价值图片", wlm: "Wiki Loves Monuments 古迹摄影赛", wle: "Wiki Loves Earth 自然摄影赛", geograph: "Geograph 英国与爱尔兰地理照片", inat: "iNaturalist 自然观察" },
     collectionsLabel: "精选集",
     collectionCount: (n: number) => `${n.toLocaleString("zh-Hans")} 个机位`,
     brand: "Sightspot",
     /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
     tagline: "摄影机位地图",
-    description: "在地图上查找真实的拍摄位置：样片、坐标、焦距与朝向，来自 Wikimedia Commons 的高质量照片。",
+    description: "在地图上查找真实的拍摄位置：样片、坐标、焦距与朝向，来自 Wikimedia Commons 等开放许可的照片。",
     count: (n: number) => `${n.toLocaleString("zh-Hans")} 个真实拍摄点`,
     loading: "加载中…",
     back: "返回",
@@ -47,14 +47,14 @@ const MESSAGES = {
     randomInView: "視野裡的隨機機位",
     shuffle: "換一批",
     appName: "Sightspot",
-    collections: { fp: "精選", qi: "優質", vi: "有價值", wlm: "WLM", wle: "WLE" },
-    collectionNames: { fp: "Commons 精選圖片", qi: "Commons 優質圖片", vi: "Commons 有價值圖片", wlm: "Wiki Loves Monuments 古蹟攝影賽", wle: "Wiki Loves Earth 自然攝影賽" },
+    collections: { fp: "精選", qi: "優質", vi: "有價值", wlm: "WLM", wle: "WLE", geograph: "Geograph", inat: "iNat" },
+    collectionNames: { fp: "Commons 精選圖片", qi: "Commons 優質圖片", vi: "Commons 有價值圖片", wlm: "Wiki Loves Monuments 古蹟攝影賽", wle: "Wiki Loves Earth 自然攝影賽", geograph: "Geograph 英國與愛爾蘭地理照片", inat: "iNaturalist 自然觀察" },
     collectionsLabel: "精選集",
     collectionCount: (n: number) => `${n.toLocaleString("zh-Hant")} 個機位`,
     brand: "Sightspot",
     /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
     tagline: "攝影機位地圖",
-    description: "在地圖上查找真實的拍攝位置：樣片、座標、焦距與朝向，來自 Wikimedia Commons 的高品質照片。",
+    description: "在地圖上查找真實的拍攝位置：樣片、座標、焦距與朝向，來自 Wikimedia Commons 等開放授權的照片。",
     count: (n: number) => `${n.toLocaleString("zh-Hant")} 個真實拍攝點`,
     loading: "載入中…",
     back: "返回",
@@ -85,14 +85,14 @@ const MESSAGES = {
     randomInView: "表示範囲からランダムに",
     shuffle: "シャッフル",
     appName: "Sightspot",
-    collections: { fp: "秀逸", qi: "高品質", vi: "有用", wlm: "WLM", wle: "WLE" },
+    collections: { fp: "秀逸", qi: "高品質", vi: "有用", wlm: "WLM", wle: "WLE", geograph: "Geograph", inat: "iNat" },
     collectionNames: { fp: "Commons 秀逸な画像", qi: "Commons 高品質な画像", vi: "Commons 有用な画像", wlm: "Wiki Loves Monuments（文化財写真コンテスト）", wle: "Wiki Loves Earth（自然写真コンテスト）" },
     collectionsLabel: "コレクション",
     collectionCount: (n: number) => `${n.toLocaleString("ja")} か所`,
     brand: "Sightspot",
     /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
     tagline: "撮影スポットマップ",
-    description: "実際の撮影位置を地図で探す：作例、座標、焦点距離と向き。Wikimedia Commons の高品質な写真から。",
+    description: "実際の撮影位置を地図で探す：作例、座標、焦点距離と向き。Wikimedia Commons などのオープンライセンス写真から。",
     count: (n: number) => `撮影地点 ${n.toLocaleString("ja")} か所`,
     loading: "読み込み中…",
     back: "戻る",
@@ -123,14 +123,14 @@ const MESSAGES = {
     randomInView: "Random spots in view",
     shuffle: "Shuffle",
     appName: "Sightspot",
-    collections: { fp: "Featured", qi: "Quality", vi: "Valued", wlm: "WLM", wle: "WLE" },
-    collectionNames: { fp: "Commons featured pictures", qi: "Commons quality images", vi: "Commons valued images", wlm: "Wiki Loves Monuments photo contest", wle: "Wiki Loves Earth photo contest" },
+    collections: { fp: "Featured", qi: "Quality", vi: "Valued", wlm: "WLM", wle: "WLE", geograph: "Geograph", inat: "iNat" },
+    collectionNames: { fp: "Commons featured pictures", qi: "Commons quality images", vi: "Commons valued images", wlm: "Wiki Loves Monuments photo contest", wle: "Wiki Loves Earth photo contest", geograph: "Geograph Britain and Ireland", inat: "iNaturalist nature observations" },
     collectionsLabel: "Collections",
     collectionCount: (n: number) => `${n.toLocaleString("en")} spots`,
     brand: "Sightspot",
     /** 名字后面的说明：标题栏、分享卡片里跟在 Sightspot 后面 */
     tagline: "Photo spot map",
-    description: "Find real camera positions on the map: sample photos, coordinates, focal length and direction, from high-quality Wikimedia Commons photos.",
+    description: "Find real camera positions on the map: sample photos, coordinates, focal length and direction, from openly licensed photos on Wikimedia Commons and more.",
     count: (n: number) => `${n.toLocaleString("en")} real camera spots`,
     loading: "Loading…",
     back: "Back",

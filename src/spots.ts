@@ -2,14 +2,24 @@
 
 import type { Locale } from "@mapette/core";
 
+/** 照片来源；Commons 以外的来源直接引用它们的图床 */
+export type Source = "commons" | "geograph" | "inat";
+
+export const SOURCE_NAMES: Record<Source, string> = {
+  commons: "Wikimedia Commons",
+  geograph: "Geograph",
+  inat: "iNaturalist",
+};
+
 export interface Spot {
   id: number;
+  src: Source;
   /** 详情所在的分片 */
   shard: string;
   title: string;
-  /** Commons 上的描述：站点语言各一段，"_" 是站点语言都没有时留的原文 */
+  /** 描述：站点语言各一段，"_" 是站点语言都没有时留的原文 */
   desc: Partial<Record<Locale | "_", string>> | null;
-  /** Commons 文件页 */
+  /** 原始页面（Commons 文件页、iNaturalist 观察记录……） */
   page: string;
   lng: number;
   lat: number;

@@ -8,7 +8,7 @@ import { COLLECTION_KEYS, inCollections, parseCollections, type Collection } fro
 import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
-import { fetchSpot, fetchSpots, loadSample, pickDesc, type SampleSpot, type Spot } from "../spots";
+import { fetchSpot, fetchSpots, loadSample, pickDesc, SOURCE_NAMES, type SampleSpot, type Spot } from "../spots";
 import SightMark from "./SightMark.vue";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
 import "@mapette/core/mapette.css";
@@ -153,7 +153,11 @@ const shortcuts = {
   "?": () => footer.value?.toggleShortcuts(),
 };
 const SHORTCUTS = computed(() => [{ keys: ["Esc"], label: t.kbBack }, ...baseShortcuts(locale)]);
-const SOURCES = [{ label: "Wikimedia Commons", href: "https://commons.wikimedia.org/wiki/Commons:Quality_images" }];
+const SOURCES = [
+  { label: "Wikimedia Commons", href: "https://commons.wikimedia.org/wiki/Commons:Quality_images" },
+  { label: "Geograph", href: "https://www.geograph.org.uk/" },
+  { label: "iNaturalist", href: "https://www.inaturalist.org/" },
+];
 // 开发时不注册 Service Worker（它会缓存 vite 的模块）
 const isProd = import.meta.env.PROD;
 const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
@@ -248,7 +252,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           © {{ focus.artist ?? t.anonymous }} ·
           <a v-if="focus.licenseUrl" :href="focus.licenseUrl" target="_blank" rel="noopener">{{ focus.license }}</a>
           <template v-else>{{ focus.license }}</template>
-          · <a :href="focus.page" target="_blank" rel="noopener">Wikimedia Commons <JIcon class="ext" :icon="ICONS.external" :size="11" /></a>
+          · <a :href="focus.page" target="_blank" rel="noopener">{{ SOURCE_NAMES[focus.src] }} <JIcon class="ext" :icon="ICONS.external" :size="11" /></a>
         </p>
       </article>
 

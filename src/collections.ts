@@ -1,8 +1,9 @@
 // 精选集筛选：地图点的属性 c 是所属精选集的位掩码（scripts/export_demo.py 的 COLLECTIONS，顺序相同）。
+// Commons 以外的来源（Geograph、iNaturalist）各占一位，和精选集一起筛选。
 // 筛选放在数据源上（聚合之前），气泡里的数字跟着变；全都不选等于不筛选。
 import type { ExpressionSpecification, GeoJSONSource, Map as MaplibreMap } from "maplibre-gl";
 
-export const COLLECTIONS = { fp: 1, qi: 2, vi: 4, wlm: 8, wle: 16 } as const;
+export const COLLECTIONS = { fp: 1, qi: 2, vi: 4, wlm: 8, wle: 16, geograph: 32, inat: 64 } as const;
 export type Collection = keyof typeof COLLECTIONS;
 export const COLLECTION_KEYS = Object.keys(COLLECTIONS) as Collection[];
 
