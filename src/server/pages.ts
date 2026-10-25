@@ -3,7 +3,7 @@ import { localeFromSegment, seoHead, type Locale } from "@mapette/core";
 import { defineHandler, defineHead, type InferProps } from "void";
 import { messagesFor } from "../i18n";
 
-const SITE = "https://spots.jannchie.com";
+const SITE = "https://spot.jannchie.com";
 
 type Params = { req: { param(name: string): string | undefined } };
 

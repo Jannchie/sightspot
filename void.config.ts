@@ -7,7 +7,9 @@ export default defineConfig({
   },
   "cloudflare": {
     "name": "photo-spots",
-    "account_id": "ad02684d0205554549c21cd8bfc41d48"
+    "account_id": "ad02684d0205554549c21cd8bfc41d48",
+    // 自定义域名：Cloudflare 自动管理 DNS 记录与证书（jannchie.com 在同一账号下）
+    "routes": [{ "pattern": "spot.jannchie.com", "custom_domain": true }]
   },
   "head": {
     "meta": [
