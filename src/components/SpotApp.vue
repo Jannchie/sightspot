@@ -121,6 +121,12 @@ const settings = computed(() => {
   if (s.iso) out.push({ label: "ISO", value: String(s.iso) });
   return out;
 });
+// 地图飞到这个机位，至少放大到街区级别（已经更近就不拉远）；留白由 mapette 处理，机位落在面板外的可见区域中间
+const explorer = ref<InstanceType<typeof MapExplorer>>();
+function showOnMap(s: Spot) {
+  const m = explorer.value?.controller?.map;
+  m?.flyTo({ center: [s.lng, s.lat], zoom: Math.max(m.getZoom(), 17), duration: 1200 });
+}
 const navUrl = (s: Spot) => directions.google(s.lat, s.lng);
 const appleUrl = (s: Spot) => directions.apple(s.lat, s.lng);
 const coords = (s: Spot) => `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
@@ -154,6 +160,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
 
 <template>
   <MapExplorer
+    ref="explorer"
     v-model:snap="sheet"
     :map-style="spotStyle"
     :locale="locale"
@@ -229,8 +236,11 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
         </ul>
 
         <div class="actions">
-          <a class="btn primary" :href="navUrl(focus)" target="_blank" rel="noopener"><JIcon :icon="ICONS.navigate" />{{ t.navigate }}</a>
-          <a class="btn" :href="appleUrl(focus)" target="_blank" rel="noopener">{{ t.appleMaps }}</a>
+          <button type="button" class="btn primary" @click="showOnMap(focus)"><JIcon :icon="ICONS.focus" />{{ t.showOnMap }}</button>
+          <div class="actions-row">
+            <a class="btn" :href="navUrl(focus)" target="_blank" rel="noopener"><JIcon :icon="ICONS.navigate" />{{ t.navigate }}</a>
+            <a class="btn" :href="appleUrl(focus)" target="_blank" rel="noopener">{{ t.appleMaps }}</a>
+          </div>
         </div>
 
         <p class="credit muted">
@@ -552,10 +562,19 @@ h2 {
   font-size: 13px;
   font-weight: 600;
 }
+/* 主按钮（在地图上查看）占一整行，下面一行是两个外部地图 App */
 .actions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 14px;
+}
+.actions-row {
+  display: flex;
+  gap: 8px;
+}
+.actions-row .btn {
+  flex: 1;
 }
 .btn {
   display: inline-flex;
@@ -563,15 +582,26 @@ h2 {
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
+  font: inherit;
   font-size: 13px;
+  color: inherit;
   text-decoration: none;
   background: var(--mapette-hover);
+  border: 0;
   border-radius: 9px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--mapette-line);
 }
 .btn.primary {
-  flex: 1;
+  padding: 10px 12px;
+  font-weight: 600;
   color: #fff;
   background: var(--mapette-accent);
+}
+.btn.primary:hover {
+  background: linear-gradient(rgb(0 0 0 / 0.08), rgb(0 0 0 / 0.08)), var(--mapette-accent);
 }
 .credit {
   margin: 14px 2px 4px;
