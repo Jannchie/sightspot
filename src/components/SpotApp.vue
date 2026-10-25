@@ -136,7 +136,8 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
   >
     <template #map><SpotLayers :focus="focus" :collections="collections" @pick="pick" @view="onView" @close="pick(null)" /></template>
 
-    <template #header>
+    <!-- 标题与筛选只在浏览时显示；打开机位详情时让出位置 -->
+    <template v-if="!focus" #header>
       <div class="head">
         <div class="brand">
           <span class="mark"><JIcon :icon="ICONS.camera" /></span>
