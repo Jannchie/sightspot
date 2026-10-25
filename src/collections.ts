@@ -27,6 +27,9 @@ export function setSourceFilter(map: MaplibreMap, source: string, url: string, s
   void s.setData(url, true).then(() => map.once("idle", () => map.fire("moveend")));
 }
 
+/** 位掩码 c 是否属于选中的任一精选集（不选为全部） */
+export const inCollections = (c: number, selected: Collection[]) => !selected.length || selected.some((k) => (c & COLLECTIONS[k]) !== 0);
+
 /** 链接里的 ?c=fp,wlm */
 export function parseCollections(v: string | null): Collection[] {
   return (v ?? "").split(",").filter((k): k is Collection => k in COLLECTIONS);

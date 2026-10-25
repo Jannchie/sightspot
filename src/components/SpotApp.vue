@@ -4,11 +4,11 @@ import { JIcon } from "@jannchie/icons-vue";
 import { baseShortcuts, directions, fieldOfView, switchLocaleUrl, type Locale, type SheetSnap } from "@mapette/core";
 import { MapExplorer, MapFooter, UpdateToast, useThemePref } from "@mapette/vue";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
-import { COLLECTION_KEYS, parseCollections, type Collection } from "../collections";
+import { COLLECTION_KEYS, inCollections, parseCollections, type Collection } from "../collections";
 import { provideLocale } from "../i18n";
 import { ICONS } from "../icons";
 import { KEEP_SOURCES, spotStyle } from "../spot-style";
-import { fetchSpot, fetchSpots, pickDesc, type Spot } from "../spots";
+import { fetchSpot, fetchSpots, loadSample, pickDesc, type SampleSpot, type Spot } from "../spots";
 import SpotLayers, { type SpotRef } from "./SpotLayers.vue";
 import "@mapette/core/mapette.css";
 
@@ -79,6 +79,31 @@ watch(collections, (c) => {
   history.replaceState(history.state, "", url);
 });
 
+// ---- 缩小地图时：视野里随机的一组样本（放大后换成视野里的全部机位） ----
+const RANDOM_COUNT = 24;
+const sample = shallowRef<SampleSpot[]>([]);
+const bounds = shallowRef<[number, number, number, number] | null>(null);
+const shuffleSeed = ref(0);
+function inBounds(s: SampleSpot, [w, south, e, n]: [number, number, number, number]) {
+  if (s.lat < south || s.lat > n) return false;
+  if (e - w >= 360) return true;
+  // 经度换算到 [w, w + 360) 再比较，跨过 180° 经线的视野也对
+  const lng = ((((s.lng - w) % 360) + 360) % 360) + w;
+  return lng <= e;
+}
+const randomPicks = computed(() => {
+  void shuffleSeed.value; // 点「换一批」时重新抽
+  const b = bounds.value;
+  if (!b) return [];
+  const pool = sample.value.filter((s) => inBounds(s, b) && inCollections(s.c, collections.value));
+  // 部分 Fisher–Yates：只洗出前 RANDOM_COUNT 个
+  for (let i = 0; i < Math.min(RANDOM_COUNT, pool.length); i++) {
+    const j = i + Math.floor(Math.random() * (pool.length - i));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, RANDOM_COUNT);
+});
+
 // 手机端抽屉：收起 / 半屏 / 全屏（拖动与吸附由 mapette 处理），选中机位时打开到半屏
 const sheet = ref<SheetSnap>("half");
 
@@ -102,6 +127,7 @@ const coords = (s: Spot) => `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
 const compass = (deg: number) => t.compass[Math.round(deg / 45) % 8];
 
 onMounted(() => {
+  loadSample().then((s) => (sample.value = s), () => {});
   fetch("/data/meta.json").then((r) => r.json() as Promise<Meta>).then((m) => (meta.value = m), () => {});
   const query = new URLSearchParams(location.search);
   collections.value = parseCollections(query.get("c"));
@@ -134,7 +160,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
     :keep-sources="KEEP_SOURCES"
     :shortcuts="shortcuts"
   >
-    <template #map><SpotLayers :focus="focus" :collections="collections" @pick="pick" @view="onView" @close="pick(null)" /></template>
+    <template #map><SpotLayers :focus="focus" :collections="collections" @bounds="(b) => (bounds = b)" @pick="pick" @view="onView" @close="pick(null)" /></template>
 
     <!-- 标题与筛选只在浏览时显示；打开机位详情时让出位置 -->
     <template v-if="!focus" #header>
@@ -165,7 +191,7 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
       </div>
     </template>
 
-    <div v-if="focus || inView" class="body">
+    <div v-if="focus || inView || randomPicks.length" class="body">
       <!-- 机位详情 -->
       <article v-if="focus" class="detail">
         <div class="detail-bar">
@@ -221,6 +247,20 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
         <p v-if="!inView.length" class="muted empty">{{ t.emptyHere }}</p>
         <div class="grid">
           <button v-for="s in inView" :key="s.id" class="thumb" :title="s.title" @click="pick({ id: s.id, shard: s.shard })">
+            <img :src="s.small" alt="" loading="lazy" />
+            <span>{{ s.title }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 缩小时：视野里随机的一组 -->
+      <section v-else class="list">
+        <div class="section-head">
+          <p class="muted section-title">{{ t.randomInView }}</p>
+          <button class="text-btn" @click="shuffleSeed++">{{ t.shuffle }}</button>
+        </div>
+        <div class="grid">
+          <button v-for="s in randomPicks" :key="s.id" class="thumb" :title="s.title" @click="pick({ id: s.id, shard: s.shard })">
             <img :src="s.small" alt="" loading="lazy" />
             <span>{{ s.title }}</span>
           </button>
@@ -366,6 +406,19 @@ h1 {
 }
 
 /* ---- 视野列表 ---- */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.section-head .section-title {
+  margin: 0 4px;
+}
+.section-head .text-btn {
+  margin: -4px 0;
+  font-size: 12px;
+}
 .section-title {
   margin: 2px 4px 10px;
   font-size: 12px;

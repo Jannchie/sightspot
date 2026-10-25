@@ -27,6 +27,8 @@ const emit = defineEmits<{
   view: [refs: SpotRef[] | null];
   /** 关掉地图上的弹出卡片（取消选中） */
   close: [];
+  /** 视野范围（拖动、缩放结束后）：[西, 南, 东, 北] */
+  bounds: [bounds: [number, number, number, number]];
 }>();
 
 const { controller } = useMap();
@@ -57,6 +59,13 @@ watch(controller, (ctrl) => {
   });
   m.on("mouseenter", "point", () => (m.getCanvas().style.cursor = "pointer"));
   m.on("mouseleave", "point", () => (m.getCanvas().style.cursor = ""));
+  const reportBounds = () => {
+    const b = m.getBounds();
+    emit("bounds", [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+  };
+  m.on("moveend", reportBounds);
+  if (m.loaded()) reportBounds();
+  else m.once("load", reportBounds);
 }, { immediate: true });
 
 function syncFocus() {

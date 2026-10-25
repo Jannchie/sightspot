@@ -77,3 +77,28 @@ export async function fetchSpots(refs: { id: number; shard: string }[]): Promise
     return d ? [{ id, shard, ...d }] : [];
   });
 }
+
+// ---- 缩小地图时侧栏随机展示的样本（/data/sample.json，scripts/export_demo.py 生成） ----
+
+const CDN = "https://cdn.jannchie.com/photo-spots/commons/";
+
+export interface SampleSpot {
+  id: number;
+  shard: string;
+  lng: number;
+  lat: number;
+  /** 所属精选集（位掩码，见 collections.ts） */
+  c: number;
+  title: string;
+  small: string;
+}
+
+let sample: Promise<SampleSpot[]> | null = null;
+
+export function loadSample(): Promise<SampleSpot[]> {
+  sample ??= fetch("/data/sample.json")
+    .then((r) => r.json() as Promise<[number, string, number, number, number, string, string | null][]>)
+    .then((rows) => rows.map(([id, shard, lng, lat, c, title, small]) => ({ id, shard, lng, lat, c, title, small: small ?? `${CDN}${id}/500.webp` })));
+  sample.catch(() => (sample = null)); // 失败的下次再试
+  return sample;
+}

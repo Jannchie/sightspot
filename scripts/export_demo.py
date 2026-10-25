@@ -2,6 +2,7 @@
 
 只收真实拍摄点：EXIF GPS 与页面坐标一致的照片。
   public/data/spots.geojson   全部机位的坐标（地图热力图与点），属性 i = Commons pageid，s = 详情分片，c = 所属精选集（位掩码）
+  public/data/sample.json    侧栏随机展示用的样本（每个分片几张）
   public/data/d/{s}.json      机位详情（含站点四种语言的描述，没有时留原文）。按空间四叉树分片（每片最多 SHARD_MAX 个），
                               视野里的机位多半落在同一两片里，浏览一片区域只需加载几个小文件
 
@@ -15,6 +16,7 @@ import re
 from pathlib import Path
 
 SHARD_MAX = 200
+SAMPLE_PER_SHARD = 2
 DESC_MAX = 400
 # Commons 的语言代码 → 站点的语言；其他语言只留一段原文（键 "_"），站点语言都没有时显示它
 DESC_LANGS = {"zh": "zh-Hans", "zh-hans": "zh-Hans", "zh-cn": "zh-Hans", "zh-sg": "zh-Hans",
@@ -203,6 +205,18 @@ def main():
         "withDesc": sum(1 for d in details.values() if d["desc"]),
         "collections": {k: sum(1 for f in features if f["properties"]["c"] & bit) for k, bit in COLLECTIONS.items()},
     }), encoding="utf-8")
+    # 缩小地图时侧栏随机展示的样本：每个分片挑 SAMPLE_PER_SHARD 张最好的（特色 > 有价值 > 比赛 > 已镜像），
+    # 分片按密度划分，所以样本在空间上也是均匀的。
+    # [pageid, 分片, 经度, 纬度, 精选集位掩码, 标题, 500px 缩略图]；已镜像的缩略图地址由 pageid 推出，存 null
+    mask = {f["properties"]["i"]: f["properties"]["c"] for f in features}
+    def rank(i):
+        c = mask[i]
+        return (c & COLLECTIONS["fp"] > 0, c & COLLECTIONS["vi"] > 0, c & (COLLECTIONS["wlm"] | COLLECTIONS["wle"]) > 0,
+                details[i]["mirrored"], -i)
+    sample = [[i, k, round(details[i]["lng"], 5), round(details[i]["lat"], 5), mask[i], details[i]["title"],
+               None if details[i]["mirrored"] else details[i]["small"]]
+              for k, ids in shards.items() for i in sorted(ids, key=rank, reverse=True)[:SAMPLE_PER_SHARD]]
+    (data / "sample.json").write_text(json.dumps(sample, separators=(",", ":")), encoding="utf-8")
     for k, ids in shards.items():
         (data / "d" / f"{k}.json").write_text(json.dumps({i: details[i] for i in ids}, ensure_ascii=False, separators=(",", ":")),
                                               encoding="utf-8")

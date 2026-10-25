@@ -5,6 +5,8 @@ import { inject, provide, type InjectionKey } from "vue";
 
 const MESSAGES = {
   "zh-Hans": {
+    randomInView: "视野里的随机机位",
+    shuffle: "换一批",
     appName: "Sightspot",
     collections: { fp: "特色图片", qi: "优质图片", vi: "有价值图片", wlm: "WLM 古迹", wle: "WLE 自然" },
     collectionsLabel: "精选集",
@@ -39,6 +41,8 @@ const MESSAGES = {
     kbBack: "返回",
   },
   "zh-Hant": {
+    randomInView: "視野裡的隨機機位",
+    shuffle: "換一批",
     appName: "Sightspot",
     collections: { fp: "精選圖片", qi: "優質圖片", vi: "有價值圖片", wlm: "WLM 古蹟", wle: "WLE 自然" },
     collectionsLabel: "精選集",
@@ -73,6 +77,8 @@ const MESSAGES = {
     kbBack: "返回",
   },
   ja: {
+    randomInView: "表示範囲からランダムに",
+    shuffle: "シャッフル",
     appName: "Sightspot",
     collections: { fp: "秀逸", qi: "高品質", vi: "有用", wlm: "WLM 文化財", wle: "WLE 自然" },
     collectionsLabel: "コレクション",
@@ -107,6 +113,8 @@ const MESSAGES = {
     kbBack: "戻る",
   },
   en: {
+    randomInView: "Random spots in view",
+    shuffle: "Shuffle",
     appName: "Sightspot",
     collections: { fp: "Featured", qi: "Quality", vi: "Valued", wlm: "WLM monuments", wle: "WLE nature" },
     collectionsLabel: "Collections",
