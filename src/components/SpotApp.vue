@@ -2,7 +2,7 @@
 // 页面：骨架（地图、侧栏 / 抽屉、留白、键盘操作、页脚）来自 @mapette/vue，这里只有机位自己的图层和面板内容
 import { JIcon } from "@jannchie/icons-vue";
 import { baseShortcuts, directions, fieldOfView, switchLocaleUrl, type Locale, type SheetSnap } from "@mapette/core";
-import { MapExplorer, MapFooter, useThemePref } from "@mapette/vue";
+import { MapExplorer, MapFooter, UpdateToast, useThemePref } from "@mapette/vue";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { COLLECTION_KEYS, parseCollections, type Collection } from "../collections";
 import { provideLocale } from "../i18n";
@@ -121,6 +121,8 @@ const shortcuts = {
 };
 const SHORTCUTS = computed(() => [{ keys: ["Esc"], label: t.kbBack }, ...baseShortcuts(locale)]);
 const SOURCES = [{ label: "Wikimedia Commons", href: "https://commons.wikimedia.org/wiki/Commons:Quality_images" }];
+// 开发时不注册 Service Worker（它会缓存 vite 的模块）
+const isProd = import.meta.env.PROD;
 const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
 </script>
 
@@ -229,6 +231,8 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
       <MapFooter ref="footer" :locale="locale" :theme-key="THEME_KEY" :sources="SOURCES" :shortcuts="SHORTCUTS" @locale="switchLocale" />
     </template>
   </MapExplorer>
+  <!-- 放在面板外面：面板的 backdrop-filter 会让里面 fixed 定位的元素相对面板定位 -->
+  <UpdateToast :locale="locale" :register="isProd" />
 </template>
 
 <style>

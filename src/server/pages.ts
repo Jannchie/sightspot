@@ -28,6 +28,11 @@ export const homePageHead = defineHead<InferProps<typeof homeLoader>>((_c, { lan
     title: t.brand,
     description: t.description,
     siteName: t.brand,
+    image: `${SITE}/icons/og-${lang.toLowerCase()}.png`,
+    // 加到主屏幕后图标下的名字（iOS）
+    meta: [{ name: "apple-mobile-web-app-title", content: t.appName }],
+    // 各语言各自的 PWA 清单（应用名、启动页），scripts/gen-pwa.mts 生成
+    link: [{ rel: "manifest", href: `/manifest-${lang.toLowerCase()}.webmanifest` }],
     jsonLd: { "@context": "https://schema.org", "@type": "WebSite", name: t.brand, url: SITE, inLanguage: lang },
   });
 });

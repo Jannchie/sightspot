@@ -15,7 +15,14 @@ export default defineConfig({
     "meta": [
       { "name": "viewport", "content": "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual" },
       { "name": "theme-color", "content": "#f2f4f6", "media": "(prefers-color-scheme: light)" },
-      { "name": "theme-color", "content": "#212327", "media": "(prefers-color-scheme: dark)" }
+      { "name": "theme-color", "content": "#212327", "media": "(prefers-color-scheme: dark)" },
+      { "name": "apple-mobile-web-app-capable", "content": "yes" },
+      { "name": "apple-mobile-web-app-status-bar-style", "content": "default" }
+    ],
+    // PWA 清单、主屏名称、分享图按页面语言在 src/server/pages.ts 里给出
+    "link": [
+      { "rel": "icon", "href": "/icons/favicon-32.png", "type": "image/png" },
+      { "rel": "apple-touch-icon", "href": "/icons/apple-touch-icon.png" }
     ],
     // 首次绘制前应用用户保存的外观选择（与 @mapette/core 的 themeInitScript("photo-spots:theme") 相同），避免刷新时闪一下
     "script": [
@@ -24,7 +31,8 @@ export default defineConfig({
   },
   "routing": {
     "headers": {
-      "/data/*": ["Cache-Control: public, max-age=3600, stale-while-revalidate=86400"]
+      "/data/*": ["Cache-Control: public, max-age=3600, stale-while-revalidate=86400"],
+      "/sw.js": ["Cache-Control: no-cache"]
     }
   }
 });

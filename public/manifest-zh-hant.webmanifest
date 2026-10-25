@@ -1,0 +1,44 @@
+{
+  "id": "/zh-hant",
+  "name": "攝影機位地圖",
+  "short_name": "攝影機位",
+  "description": "高品質照片的真實拍攝位置，附樣片、焦距與朝向",
+  "start_url": "/zh-hant",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f4f6",
+  "theme_color": "#f2f4f6",
+  "lang": "zh-Hant",
+  "categories": [
+    "photo",
+    "travel",
+    "navigation"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://spot.jannchie.com/</loc>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://spot.jannchie.com/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://spot.jannchie.com/zh-hant"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://spot.jannchie.com/ja"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://spot.jannchie.com/en"/>
+  </url>
+  <url>
+    <loc>https://spot.jannchie.com/zh-hant</loc>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://spot.jannchie.com/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://spot.jannchie.com/zh-hant"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://spot.jannchie.com/ja"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://spot.jannchie.com/en"/>
+  </url>
+  <url>
+    <loc>https://spot.jannchie.com/ja</loc>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://spot.jannchie.com/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://spot.jannchie.com/zh-hant"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://spot.jannchie.com/ja"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://spot.jannchie.com/en"/>
+  </url>
+  <url>
+    <loc>https://spot.jannchie.com/en</loc>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://spot.jannchie.com/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://spot.jannchie.com/zh-hant"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://spot.jannchie.com/ja"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://spot.jannchie.com/en"/>
+  </url>
+</urlset>
