@@ -66,12 +66,46 @@ async function onView(refs: SpotRef[] | null) {
   if (seq === viewSeq) inView.value = spots;
 }
 
-// ---- 精选集筛选（多选，全不选为全部），写进 ?c=fp,wlm ----
+// ---- 精选集筛选（多选，全不选为默认隐藏以外的全部），写进 ?c=fp,wlm ----
 const collections = ref<Collection[]>([]);
 function toggleCollection(k: Collection) {
   const on = new Set(collections.value);
   if (!on.delete(k)) on.add(k);
   collections.value = COLLECTION_KEYS.filter((x) => on.has(x));
+}
+// 标签一行排开：触屏本来就能横滑，桌面上用鼠标拖动或竖向滚轮横向滚动；拖过之后的那次 click 不切换标签
+let drag: { x: number; left: number; moved: boolean } | null = null;
+let dragged = false;
+function onFiltersDown(e: PointerEvent) {
+  if (e.pointerType !== "mouse" || e.button !== 0) return;
+  drag = { x: e.clientX, left: (e.currentTarget as HTMLElement).scrollLeft, moved: false };
+  dragged = false;
+}
+function onFiltersMove(e: PointerEvent) {
+  if (!drag) return;
+  const el = e.currentTarget as HTMLElement;
+  const dx = e.clientX - drag.x;
+  if (!drag.moved && Math.abs(dx) < 4) return;
+  if (!drag.moved) el.setPointerCapture(e.pointerId);
+  drag.moved = true;
+  el.scrollLeft = drag.left - dx;
+}
+function onFiltersUp() {
+  dragged = !!drag?.moved;
+  drag = null;
+}
+function onFiltersWheel(e: WheelEvent) {
+  const el = e.currentTarget as HTMLElement;
+  if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || el.scrollWidth <= el.clientWidth) return;
+  e.preventDefault();
+  el.scrollLeft += e.deltaY;
+}
+function onChipClick(k: Collection) {
+  if (dragged) {
+    dragged = false;
+    return;
+  }
+  toggleCollection(k);
 }
 watch(collections, (c) => {
   const url = new URL(location.href);
@@ -188,15 +222,24 @@ const switchLocale = (next: Locale) => (location.href = switchLocaleUrl(next));
           </div>
         </div>
       </div>
-      <div class="filters" role="group" :aria-label="t.collectionsLabel">
+      <div
+        class="filters"
+        role="group"
+        :aria-label="t.collectionsLabel"
+        @pointerdown="onFiltersDown"
+        @pointermove="onFiltersMove"
+        @pointerup="onFiltersUp"
+        @pointercancel="onFiltersUp"
+        @wheel="onFiltersWheel"
+      >
         <button
           v-for="k in COLLECTION_KEYS"
           :key="k"
           class="chip"
           :class="{ on: collections.includes(k) }"
           :aria-pressed="collections.includes(k)"
-          :title="meta?.collections ? `${t.collectionNames[k]} · ${t.collectionCount(meta.collections[k])}` : t.collectionNames[k]"
-          @click="toggleCollection(k)"
+          :title="meta?.collections?.[k] != null ? `${t.collectionNames[k]} · ${t.collectionCount(meta.collections[k])}` : t.collectionNames[k]"
+          @click="onChipClick(k)"
         >
           {{ t.collections[k] }}
         </button>
@@ -363,6 +406,7 @@ h1 {
   padding: 0 14px 12px 16px;
   overflow-x: auto;
   scrollbar-width: none;
+  user-select: none;
 }
 .filters .chip {
   flex: none;
