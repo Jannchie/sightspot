@@ -1,5 +1,6 @@
 // 机位地图的样式：mapette 的底图 + 机位聚合气泡、单个机位、选中高亮与取景扇形
 import { clusterLayers, clusterSource, coneLayers, createBasemap, focusPointLayer, pointLayer, UNCLUSTERED, type StyleContext } from "@mapette/core";
+import { filterOf } from "./collections";
 
 const RAIL = "pmtiles://https://cdn.jannchie.com/junrei/rail/rail-v4.pmtiles";
 
@@ -21,7 +22,8 @@ export function spotStyle({ palette: c, locale }: StyleContext) {
     rail: RAIL,
     sources: {
       // 全部机位：maplibre 在 worker 里抓取、解析并按缩放聚合，主线程不碰这 12 万个点
-      spots: clusterSource(SPOTS_URL, CLUSTER),
+      // 一开始就带上默认筛选（隐藏默认不显示的精选集），免得加载完再筛一遍
+      spots: { ...clusterSource(SPOTS_URL, CLUSTER), filter: filterOf([]) },
       // 选中机位的取景扇形（有朝向时）与选中的点：单独放，被聚合进气泡时也看得到
       cone: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
       focus: { type: "geojson", data: { type: "FeatureCollection", features: [] } },

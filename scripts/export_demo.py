@@ -45,7 +45,8 @@ DATA_KEY = "photo-spots/data/data.tar.gz"
 DATA_URL = f"https://cdn.jannchie.com/{DATA_KEY}"
 REPO = "Jannchie/sightspot"
 # 精选集 → 地图点属性 c 的位，前端按位筛选（src/collections.ts 里同样的顺序）
-COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16, "geograph": 32, "inat": 64}
+# wp：被多个语言的维基百科条目使用的照片（sources/select_wp.py 挑的）
+COLLECTIONS = {"fp": 1, "qi": 2, "vi": 4, "wlm": 8, "wle": 16, "geograph": 32, "inat": 64, "wp": 128}
 # 其他来源：地图上的编号 = 偏移 + 来源里的编号（Commons 的 pageid 在 1e9 以内）
 SOURCES = {"geograph": 1 * 10**12, "inat": 2 * 10**12}
 # 来源内质量分（score）的下限。Geograph 是展示廊投票的贝叶斯平均分（1–5）：≥ 4 约占前 10%，

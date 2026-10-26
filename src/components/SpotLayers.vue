@@ -17,7 +17,7 @@ export interface SpotRef {
 
 const props = defineProps<{
   focus: Spot | null;
-  /** 只显示这些精选集里的机位；空数组为全部 */
+  /** 只显示这些精选集里的机位；空数组为默认隐藏以外的全部 */
   collections: Collection[];
 }>();
 
